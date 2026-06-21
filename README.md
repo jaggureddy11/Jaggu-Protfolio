@@ -42,3 +42,29 @@ This portfolio was designed to be playful and personal rather than corporate. It
 
 ---
 *Designed with ✏️ in Bengaluru, India.*
+
+## 💡 Prompt
+
+> Create a portfolio website as a hand-drawn 3D world where visitors can physically explore a creator's mind. Make it playful, personal, and feel like a sketchbook brought to life."
+> 
+> Build the entire experience inside an interactive 3D hallway
+> 
+> Create a custom animated character that acts as the guide through the world
+> 
+> Use hand-drawn illustrations and doodles instead of polished Ul elements
+> 
+> Design every section as a physical space users can discover and explore
+> 
+> Use Three.js + WebGL to create depth and movement inside the environment
+> 
+> Blend 2D sketch aesthetics with 3D navigation for a unique visual style
+> 
+> Hide portfolio pieces and easter eggs throughout the world
+> 
+> Make scrolling feel like traveling deeper into a creator's imagination
+> 
+> Use animations and interactions that feel playful rather than corporate
+> 
+> Focus on personality first, portfolio second
+> 
+> The result feels less like a personal website and more like stepping inside an interactive sketchbook.

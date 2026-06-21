@@ -397,10 +397,10 @@ function initMascot() {
   mascotPointTexture = textureLoader.load(mascotPointImgUrl);
   mascotWalkTexture = textureLoader.load(mascotWalkSheetUrl);
   
-  // Set up walking spritesheet texture mapping (3 columns, 1 row)
+  // Set up walking spritesheet texture mapping (4 columns, 1 row)
   mascotWalkTexture.wrapS = THREE.RepeatWrapping;
   mascotWalkTexture.wrapT = THREE.RepeatWrapping;
-  mascotWalkTexture.repeat.set(1 / 3, 1.0);
+  mascotWalkTexture.repeat.set(0.25, 1.0);
   
   const material = new THREE.MeshBasicMaterial({
     map: mascotTexture,
@@ -428,9 +428,9 @@ function updateMascotPose(pose, direction = 1) {
       mascotSprite.scale.set(direction, 1, 1);
     } else if (pose === 'walk') {
       mascotSprite.material.map = mascotWalkTexture;
-      // Walking frame aspect ratio is 353/1351 = ~0.261.
-      // Since geometry is 1.4x2.1 (0.666), scale width by 0.261 / 0.666 = 0.39
-      mascotSprite.scale.set(0.39 * direction, 1, 1);
+      // Walking frame aspect ratio is 256/682 = ~0.375.
+      // Since geometry is 1.4x2.1 (0.666), scale width by 0.375 / 0.666 = 0.5625
+      mascotSprite.scale.set(0.5625 * direction, 1, 1);
     } else {
       mascotSprite.material.map = mascotTexture;
       mascotSprite.scale.set(direction, 1, 1);
@@ -783,9 +783,9 @@ function animate(time) {
       // deltaZ < 0 means scrolling down (walking forward)
       // We scale the animation progress to scroll speed
       mascotWalkTime -= deltaZ * 3.0;
-      let frameIndex = Math.floor(mascotWalkTime) % 3;
-      if (frameIndex < 0) frameIndex += 3;
-      mascotWalkTexture.offset.x = frameIndex * (1 / 3);
+      let frameIndex = Math.floor(mascotWalkTime) % 4;
+      if (frameIndex < 0) frameIndex += 4;
+      mascotWalkTexture.offset.x = frameIndex * 0.25;
       
       animateMascotWheel();
     } else {

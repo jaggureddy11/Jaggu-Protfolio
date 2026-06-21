@@ -764,12 +764,10 @@ function animate(time) {
   
   // 3. Update Mascot floating and animation poses
   if (mascotSprite) {
-    // Keep mascot floating in front of camera
+    // Keep mascot completely locked to the camera viewport (HUD-style) to prevent shaking or bobbing
+    mascotSprite.position.x = camera.position.x - 1.2;
+    mascotSprite.position.y = camera.position.y - 0.55;
     mascotSprite.position.z = camera.position.z - 4.5;
-    
-    // Subtle idle floating up and down in sine wave
-    const floatOffset = Math.sin(time * 0.003) * 0.06;
-    mascotSprite.position.y = -0.55 + floatOffset;
     
     // Ensure no walking tilt, bounce, or squash is left on the mascot
     mascotSprite.rotation.z = 0;

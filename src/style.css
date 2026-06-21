@@ -1,0 +1,750 @@
+/* Custom Design System for Hand-Drawn Sketchbook */
+
+:root {
+  --bg-color: #fbf8eb;       /* Cream paper */
+  --ink-color: #1a1a1a;      /* Charcoal ink */
+  --ink-accent: #2b5c8f;     /* Blue pen ink */
+  --ink-warn: #c94a4a;       /* Red pen ink */
+  --grid-color: rgba(26, 26, 26, 0.04);
+  --paper-line: rgba(201, 74, 74, 0.15); /* Red margin line */
+  
+  --font-title: 'Architects Daughter', cursive, sans-serif;
+  --font-hand: 'Patrick Hand', cursive, sans-serif;
+  --font-cursive: 'Caveat', cursive, sans-serif;
+}
+
+/* Chalkboard Theme overrides (Dark Mode) */
+.chalkboard-mode {
+  --bg-color: #2b2e2a;       /* Chalkboard slate green */
+  --ink-color: #eaeaea;      /* White chalk */
+  --ink-accent: #f4d068;     /* Yellow chalk */
+  --ink-warn: #f08a8a;       /* Pink chalk */
+  --grid-color: rgba(255, 255, 255, 0.03);
+  --paper-line: rgba(255, 255, 255, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body, html {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  background-color: var(--bg-color);
+  color: var(--ink-color);
+  font-family: var(--font-hand), sans-serif;
+  font-size: 1.2rem;
+  transition: background-color 0.5s ease, color 0.5s ease;
+  user-select: none;
+}
+
+/* SVG filters wiggling active elements */
+.sketch-wobbly, 
+.sketch-card, 
+.hand-drawn-btn, 
+.sketch-modal,
+.nav-ribbon ul li span {
+  filter: url(#sketch-wiggle);
+}
+
+/* Background Paper Overlay */
+.paper-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 1;
+  pointer-events: none;
+  background: 
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px) 0 0 / 25px 25px,
+    linear-gradient(var(--grid-color) 1px, transparent 1px) 0 0 / 25px 25px;
+  opacity: 0.85;
+}
+
+/* Vertical Notebook Margin Line */
+.paper-overlay::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 80px;
+  width: 2px;
+  height: 100%;
+  background-color: var(--paper-line);
+  box-shadow: 1px 0 0 var(--paper-line);
+}
+
+/* WebGL Canvas */
+#webgl-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 2;
+  display: block;
+}
+
+/* Notebook Spiral Rings on Left Margin */
+.notebook-rings {
+  position: fixed;
+  left: 15px;
+  top: 5%;
+  height: 90%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.ring {
+  width: 30px;
+  height: 14px;
+  background: transparent;
+  border: 3px solid #888;
+  border-radius: 4px;
+  position: relative;
+  box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.15);
+  transform: rotate(-10deg);
+}
+
+.chalkboard-mode .ring {
+  border-color: #bbb;
+  box-shadow: none;
+}
+
+/* Scroll Container representing physical scroll height */
+.scroll-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 900vh; /* Determines how much scrolling is required */
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Interactive Doodled Buttons */
+.hand-drawn-btn {
+  position: fixed;
+  padding: 10px 18px;
+  background: var(--bg-color);
+  border: 3px solid var(--ink-color);
+  color: var(--ink-color);
+  font-family: var(--font-title);
+  font-size: 1rem;
+  cursor: pointer;
+  z-index: 100;
+  outline: none;
+  border-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  box-shadow: 3px 4px 0 var(--ink-color);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hand-drawn-btn:active {
+  transform: translate(2px, 3px);
+  box-shadow: 1px 1px 0 var(--ink-color);
+}
+
+/* Theme Toggle Button (Hanging Cord / Lamp) */
+#theme-toggle {
+  right: 30px;
+  top: 30px;
+}
+
+.lamp-cord {
+  display: block;
+  width: 2px;
+  height: 10px;
+  background-color: var(--ink-color);
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+#sound-toggle {
+  right: 30px;
+  top: 90px;
+}
+
+/* Navigation Ribbon */
+.nav-ribbon {
+  position: fixed;
+  top: 30px;
+  left: 120px;
+  z-index: 90;
+}
+
+.nav-ribbon ul {
+  display: flex;
+  gap: 15px;
+  list-style: none;
+}
+
+.nav-ribbon ul li {
+  cursor: pointer;
+}
+
+.nav-ribbon ul li span {
+  display: block;
+  padding: 6px 12px;
+  border: 2px solid transparent;
+  font-family: var(--font-cursive);
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--ink-color);
+  transition: border-color 0.2s, transform 0.2s;
+  border-radius: 50% 10% 40% 10% / 10% 40% 10% 50%;
+}
+
+.nav-ribbon ul li.active span,
+.nav-ribbon ul li:hover span {
+  border-color: var(--ink-accent);
+  transform: scale(1.1) rotate(-2deg);
+  color: var(--ink-accent);
+}
+
+/* 2D Overlay UI Panels Container */
+#ui-overlays {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none; /* Allow click through to WebGL canvas */
+}
+
+/* Specific Panel Settings */
+.ui-panel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Push content card to the right side on desktop */
+  padding-right: 10%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(20px);
+  transition: opacity 0.6s cubic-bezier(0.25, 1, 0.5, 1), transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Cover panel is centered */
+#sec-cover {
+  justify-content: center;
+  padding-right: 0;
+}
+
+.ui-panel.visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* Hand-Drawn Sketch Card Styles */
+.sketch-card {
+  width: 460px;
+  max-height: 80%;
+  background: var(--bg-color);
+  border: 4px solid var(--ink-color);
+  border-radius: 20px 50px 30px 100px / 40px 30px 80px 40px;
+  padding: 35px;
+  box-shadow: 8px 10px 0 var(--grid-color), -2px -2px 0 rgba(0, 0, 0, 0.05);
+  overflow-y: auto;
+  pointer-events: auto;
+  position: relative;
+}
+
+.sketch-card h1, .sketch-card h2, .sketch-card h3 {
+  font-family: var(--font-title);
+  color: var(--ink-accent);
+  margin-bottom: 15px;
+}
+
+.sketch-card h1 {
+  font-size: 2.8rem;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.sketch-card h2 {
+  font-size: 1.8rem;
+  border-bottom: 2px dashed var(--ink-color);
+  padding-bottom: 5px;
+}
+
+.sketch-card p {
+  line-height: 1.5;
+  margin-bottom: 15px;
+}
+
+/* Cover Card Specifics */
+.cover-card {
+  text-align: center;
+  width: 520px;
+}
+
+.cover-card .subtitle {
+  font-family: var(--font-cursive);
+  font-size: 1.8rem;
+  color: var(--ink-warn);
+  margin-top: 5px;
+}
+
+.mascot-introduction {
+  margin: 30px 0;
+  padding: 15px;
+  border: 2px dashed var(--ink-color);
+  border-radius: 12px;
+  background: rgba(43, 92, 143, 0.05);
+  font-family: var(--font-cursive);
+  font-size: 1.4rem;
+  position: relative;
+}
+
+.mascot-speech-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -15px;
+  left: 30px;
+  border-width: 15px 15px 0;
+  border-style: solid;
+  border-color: var(--ink-color) transparent;
+  display: block;
+  width: 0;
+}
+
+.scroll-prompt {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: var(--font-cursive);
+  font-size: 1.4rem;
+}
+
+.scroll-arrow {
+  font-size: 2.2rem;
+  animation: bounce 1.5s infinite;
+  color: var(--ink-accent);
+}
+
+/* Bullet list and details */
+.notebook-bullet {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 10px 0;
+}
+
+.bullet-doodle {
+  font-size: 1.3rem;
+  margin-top: 2px;
+}
+
+/* Skill Workbench Styles */
+.skills-card {
+  width: 480px;
+}
+
+.instruction-text {
+  font-family: var(--font-cursive);
+  font-size: 1.3rem;
+  color: var(--ink-warn);
+  margin-bottom: 15px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.skills-details-container {
+  border: 2px dashed var(--ink-color);
+  border-radius: 12px;
+  padding: 15px;
+  min-height: 160px;
+  background-color: rgba(0,0,0,0.02);
+}
+
+.skill-detail-item {
+  display: none;
+}
+
+.skill-detail-item.active {
+  display: block;
+  animation: drawIn 0.3s ease;
+}
+
+.skills-details-container h3 {
+  font-size: 1.3rem;
+  margin-bottom: 5px;
+  color: var(--ink-accent);
+}
+
+/* Project List in Overlay */
+.projects-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.project-summary-item {
+  border: 2px solid var(--ink-color);
+  border-radius: 10px;
+  padding: 12px 15px;
+  cursor: pointer;
+  background: var(--bg-color);
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 3px 3px 0 var(--ink-color);
+}
+
+.project-summary-item:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 var(--ink-color);
+  border-color: var(--ink-accent);
+}
+
+.project-summary-item h3 {
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.tech-tag {
+  font-family: var(--font-cursive);
+  font-size: 1.1rem;
+  color: var(--ink-accent);
+  font-weight: bold;
+}
+
+/* Experience List */
+.experience-header {
+  margin-bottom: 15px;
+  border-bottom: 1px dashed var(--ink-color);
+  padding-bottom: 8px;
+}
+
+.experience-header .company {
+  font-family: var(--font-cursive);
+  font-size: 1.3rem;
+  color: var(--ink-warn);
+  font-weight: bold;
+}
+
+.experience-list {
+  list-style: none;
+}
+
+.experience-list li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 12px;
+  line-height: 1.4;
+}
+
+.experience-list li::before {
+  content: '⚡';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  font-size: 0.9rem;
+}
+
+/* Certifications & Publications Grid */
+.certs-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cert-item, .publication-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 8px 10px;
+  border: 1px dashed var(--ink-color);
+  border-radius: 8px;
+}
+
+.cert-badge, .pub-badge {
+  font-size: 1.8rem;
+}
+
+.cert-item h4, .publication-item h4 {
+  font-size: 1.1rem;
+  color: var(--ink-color);
+  font-family: var(--font-hand);
+  margin-bottom: 2px;
+}
+
+.cert-item p, .publication-item p {
+  font-family: var(--font-cursive);
+  font-size: 1.1rem;
+  color: var(--ink-accent);
+  margin: 0;
+}
+
+/* Contact Links */
+.contact-links {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.contact-link-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--ink-color);
+  font-size: 1.3rem;
+  padding: 8px 12px;
+  border: 2px solid var(--ink-color);
+  border-radius: 8px;
+  box-shadow: 2px 2px 0 var(--ink-color);
+  background: var(--bg-color);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.contact-link-item:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink-color);
+  color: var(--ink-accent);
+  border-color: var(--ink-accent);
+}
+
+.footer-note {
+  text-align: center;
+  font-family: var(--font-cursive);
+  font-size: 1.2rem;
+  color: var(--ink-warn);
+  margin-top: 15px;
+}
+
+/* Detailed Project Modals */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sketch-modal {
+  width: 580px;
+  max-width: 90%;
+  max-height: 85%;
+  background: var(--bg-color);
+  border: 4px solid var(--ink-color);
+  border-radius: 40px 15px 30px 15px / 15px 30px 15px 40px;
+  padding: 30px;
+  box-shadow: 10px 12px 0 var(--ink-color);
+  position: relative;
+  overflow-y: auto;
+  transform: scale(0.9) rotate(-1deg);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.modal-overlay.visible .sketch-modal {
+  transform: scale(1) rotate(0deg);
+}
+
+.close-modal-btn {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--ink-color);
+}
+
+.close-modal-btn:hover {
+  color: var(--ink-warn);
+  transform: scale(1.2);
+}
+
+.sketch-modal h2 {
+  font-family: var(--font-title);
+  color: var(--ink-accent);
+  font-size: 1.8rem;
+  border-bottom: 2px dashed var(--ink-color);
+  padding-bottom: 8px;
+  margin-bottom: 5px;
+}
+
+.modal-tagline {
+  font-family: var(--font-cursive);
+  font-size: 1.3rem;
+  color: var(--ink-warn);
+  margin-bottom: 20px;
+  font-weight: bold;
+}
+
+.modal-body p {
+  margin-bottom: 15px;
+  line-height: 1.5;
+}
+
+.modal-body ul {
+  list-style: none;
+  margin-bottom: 20px;
+}
+
+.modal-body ul li {
+  position: relative;
+  padding-left: 20px;
+  margin-bottom: 10px;
+  line-height: 1.4;
+  font-size: 1.1rem;
+}
+
+.modal-body ul li::before {
+  content: '👉';
+  position: absolute;
+  left: 0;
+  top: 1px;
+}
+
+.modal-btn {
+  display: inline-block;
+  text-decoration: none;
+  padding: 8px 16px;
+  border: 2px solid var(--ink-color);
+  color: var(--ink-color);
+  border-radius: 20px 5px 15px 5px / 5px 15px 5px 20px;
+  background: var(--bg-color);
+  box-shadow: 3px 3px 0 var(--ink-color);
+  font-family: var(--font-title);
+  font-size: 1rem;
+  font-weight: bold;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.modal-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 var(--ink-color);
+  color: var(--ink-accent);
+  border-color: var(--ink-accent);
+}
+
+/* Animations */
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(8px);
+  }
+}
+
+@keyframes drawIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Hide scrollbar of panels for clean aesthetic */
+.sketch-card::-webkit-scrollbar,
+.sketch-modal::-webkit-scrollbar {
+  width: 6px;
+}
+.sketch-card::-webkit-scrollbar-thumb,
+.sketch-modal::-webkit-scrollbar-thumb {
+  background-color: var(--ink-color);
+  border-radius: 3px;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 900px) {
+  .nav-ribbon {
+    left: 20px;
+    top: auto;
+    bottom: 20px;
+    right: 20px;
+    width: auto;
+    z-index: 110;
+  }
+  .nav-ribbon ul {
+    justify-content: space-around;
+    background: var(--bg-color);
+    border: 2px solid var(--ink-color);
+    border-radius: 12px;
+    padding: 5px 10px;
+    box-shadow: 2px 2px 0 var(--ink-color);
+  }
+  .nav-ribbon ul li span {
+    font-size: 1.1rem;
+    padding: 4px 8px;
+  }
+  
+  .ui-panel {
+    justify-content: center;
+    padding-right: 0;
+    padding: 15px;
+    align-items: flex-start;
+    padding-top: 80px;
+  }
+  
+  .sketch-card {
+    width: 100%;
+    max-height: 70vh;
+    padding: 20px;
+  }
+  
+  .sketch-card h1 {
+    font-size: 2.2rem;
+  }
+
+  .cover-card {
+    width: 100%;
+  }
+
+  #theme-toggle {
+    right: 20px;
+    top: 20px;
+  }
+  
+  #sound-toggle {
+    left: 20px;
+    top: 20px;
+    right: auto;
+  }
+  
+  .notebook-rings {
+    display: none;
+  }
+  
+  .paper-overlay::after {
+    left: 15px;
+  }
+}

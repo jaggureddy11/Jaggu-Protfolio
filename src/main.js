@@ -1,0 +1,795 @@
+import * as THREE from 'three';
+import { gsap } from 'gsap';
+import {
+  drawBrainDoodle,
+  drawProject1Doodle,
+  drawProject2Doodle,
+  drawAndroidDoodle,
+  drawCertsDoodle,
+  drawMailboxDoodle,
+  drawMascotPose
+} from './doodles.js';
+
+// --- State Management ---
+let isChalkboard = false;
+let soundEnabled = false;
+let audioCtx = null;
+let scrollGainNode = null;
+let activeSectionIndex = 0;
+const floatingSkills = [];
+
+const sectionZPositions = [0, -15, -30, -45, -60, -75, -90];
+const sections = ['cover', 'bio', 'skills', 'projects', 'intern', 'certs', 'connect'];
+
+// Ink Colors based on Theme
+const getInkColor = () => isChalkboard ? '#eaeaea' : '#1a1a1a';
+const getAccentColor = () => isChalkboard ? '#f4d068' : '#2b5c8f';
+
+// --- Web Audio API Synthesizer ---
+function initAudio() {
+  if (audioCtx) return;
+  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  
+  // Create continuous white noise for pencil scratch
+  const bufferSize = audioCtx.sampleRate * 2;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = Math.random() * 2 - 1;
+  }
+  
+  const noise = audioCtx.createBufferSource();
+  noise.buffer = buffer;
+  noise.loop = true;
+  
+  // Bandpass filter to model pencil scratch frequency response
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.value = 1200;
+  filter.Q.value = 4.0;
+  
+  scrollGainNode = audioCtx.createGain();
+  scrollGainNode.gain.value = 0;
+  
+  noise.connect(filter);
+  filter.connect(scrollGainNode);
+  scrollGainNode.connect(audioCtx.destination);
+  
+  noise.start();
+}
+
+function playClickSound() {
+  if (!soundEnabled || !audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.08);
+  
+  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+  
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.08);
+}
+
+function playScribbleSound() {
+  if (!soundEnabled || !audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  
+  osc.frequency.setValueAtTime(700, audioCtx.currentTime);
+  osc.frequency.linearRampToValueAtTime(1100, audioCtx.currentTime + 0.06);
+  osc.frequency.linearRampToValueAtTime(500, audioCtx.currentTime + 0.12);
+  osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.18);
+  
+  gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+  gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.06);
+  gain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.12);
+  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.22);
+  
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.22);
+}
+
+// --- Three.js Setup ---
+const canvas = document.getElementById('webgl-canvas');
+const scene = new THREE.Scene();
+
+// Camera setup
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(0, 0, 5); // Start outside
+
+const renderer = new THREE.WebGLRenderer({
+  canvas: canvas,
+  alpha: true, // Transparent to show CSS paper background grid
+  antialias: true
+});
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+// Add basic lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+scene.add(ambientLight);
+
+const pointLight = new THREE.PointLight(0xffffff, 0.5, 30);
+pointLight.position.set(0, 2, -10);
+scene.add(pointLight);
+
+// --- Corridor Procedural Line Generator ---
+let corridorLines = [];
+
+function drawWobblyCorridor() {
+  // Clear existing lines
+  corridorLines.forEach(line => scene.remove(line));
+  corridorLines = [];
+
+  const inkColor = isChalkboard ? 0xdddddd : 0x222222;
+  const lineMaterial = new THREE.LineBasicMaterial({ color: inkColor, linewidth: 2 });
+  
+  // Corridor bounds
+  const w = 5;  // half-width
+  const h = 3.5; // half-height
+  const length = -105;
+  const segmentLength = 15;
+  
+  // Helper to create wobbly line vertices in 3D
+  const createSketchySegment = (start, end) => {
+    const points = [];
+    const dist = start.distanceTo(end);
+    const steps = Math.max(2, Math.floor(dist / 2));
+    points.push(start);
+    
+    for (let i = 1; i < steps; i++) {
+      const t = i / steps;
+      const pt = new THREE.Vector3().lerpVectors(start, end, t);
+      // Add slight jitter perpendicular to the line
+      pt.x += (Math.random() - 0.5) * 0.08;
+      pt.y += (Math.random() - 0.5) * 0.08;
+      pt.z += (Math.random() - 0.5) * 0.05;
+      points.push(pt);
+    }
+    points.push(end);
+    const geometry = new THREE.BufferGeometry().setFromPoints(points);
+    return new THREE.Line(geometry, lineMaterial);
+  };
+
+  // 1. Draw Longitudinal Lines (corridor frame structure)
+  // Bottom Left
+  scene.add(createSketchySegment(new THREE.Vector3(-w, -h, 5), new THREE.Vector3(-w, -h, length)));
+  // Bottom Right
+  scene.add(createSketchySegment(new THREE.Vector3(w, -h, 5), new THREE.Vector3(w, -h, length)));
+  // Top Left
+  scene.add(createSketchySegment(new THREE.Vector3(-w, h, 5), new THREE.Vector3(-w, h, length)));
+  // Top Right
+  scene.add(createSketchySegment(new THREE.Vector3(w, h, 5), new THREE.Vector3(w, h, length)));
+
+  // 2. Draw Transverse Arch Frames (rings going deep)
+  for (let z = 5; z >= length; z -= segmentLength) {
+    // Floor
+    scene.add(createSketchySegment(new THREE.Vector3(-w, -h, z), new THREE.Vector3(w, -h, z)));
+    // Ceiling
+    scene.add(createSketchySegment(new THREE.Vector3(-w, h, z), new THREE.Vector3(w, h, z)));
+    // Left Wall
+    scene.add(createSketchySegment(new THREE.Vector3(-w, -h, z), new THREE.Vector3(-w, h, z)));
+    // Right Wall
+    scene.add(createSketchySegment(new THREE.Vector3(w, -h, z), new THREE.Vector3(w, h, z)));
+    
+    // Draw some sketchy hatching on the floor to simulate planks/hatching
+    if (z > length) {
+      for (let offset = 2; offset < segmentLength; offset += 4) {
+        scene.add(createSketchySegment(
+          new THREE.Vector3(-w, -h, z - offset), 
+          new THREE.Vector3(-w + 1.5, -h, z - offset - 1.5)
+        ));
+        scene.add(createSketchySegment(
+          new THREE.Vector3(w, -h, z - offset), 
+          new THREE.Vector3(w - 1.5, -h, z - offset - 1.5)
+        ));
+      }
+    }
+  }
+
+  // Collect references for cleanup
+  scene.traverse(child => {
+    if (child instanceof THREE.Line) {
+      corridorLines.push(child);
+    }
+  });
+}
+
+// --- Dynamic Doodle Object Factory ---
+const interactiveObjects = [];
+
+function createDoodleMesh(drawFunc, width, height, position, id) {
+  // Create HTML Canvas for Texture
+  const canvasTexture = document.createElement('canvas');
+  canvasTexture.width = 512;
+  canvasTexture.height = 512;
+  
+  // Initial draw
+  drawFunc(canvasTexture, getInkColor());
+  
+  const texture = new THREE.CanvasTexture(canvasTexture);
+  texture.minFilter = THREE.LinearFilter;
+  
+  // Sketchy material (double-sided transparent card)
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  
+  const geometry = new THREE.PlaneGeometry(width, height);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.copy(position);
+  mesh.userData = { id, drawFunc, canvasTexture, texture };
+  
+  scene.add(mesh);
+  interactiveObjects.push(mesh);
+  return mesh;
+}
+
+// --- Dynamic Real Icon Badge Factory ---
+function createRealIconDoodleMesh(iconUrl, size, position, id) {
+  const canvasTexture = document.createElement('canvas');
+  canvasTexture.width = 512;
+  canvasTexture.height = 512;
+  const ctx = canvasTexture.getContext('2d');
+  
+  const texture = new THREE.CanvasTexture(canvasTexture);
+  texture.minFilter = THREE.LinearFilter;
+  
+  const material = new THREE.MeshBasicMaterial({
+    map: texture,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  
+  const geometry = new THREE.PlaneGeometry(size, size);
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.position.copy(position);
+  
+  let loadedImg = null;
+  
+  const drawBadge = (canvas, color) => {
+    const inkColor = color || getInkColor();
+    ctx.clearRect(0, 0, 512, 512);
+    
+    const renderImg = (img) => {
+      const logoSize = 340;
+      ctx.save();
+      if (isChalkboard) {
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+        ctx.shadowBlur = 25;
+      }
+      ctx.drawImage(img, 256 - logoSize / 2, 256 - logoSize / 2, logoSize, logoSize);
+      ctx.restore();
+      texture.needsUpdate = true;
+    };
+    
+    if (loadedImg) {
+      renderImg(loadedImg);
+    } else {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.src = iconUrl;
+      img.onload = () => {
+        loadedImg = img;
+        renderImg(img);
+      };
+    }
+  };
+  
+  drawBadge();
+  
+  mesh.userData = { id, drawFunc: drawBadge, canvasTexture, texture };
+  scene.add(mesh);
+  interactiveObjects.push(mesh);
+  return mesh;
+}
+
+// --- Setup Portfolio Doodles in 3D Hallway ---
+function initDoodles() {
+  // Remove existing
+  interactiveObjects.forEach(obj => {
+    scene.remove(obj);
+    obj.geometry.dispose();
+    obj.material.map.dispose();
+    obj.material.dispose();
+  });
+  interactiveObjects.length = 0;
+  floatingSkills.length = 0;
+
+  // About Me Doodle (Z = -15, Left Wall)
+  createDoodleMesh(drawBrainDoodle, 3.2, 3.2, new THREE.Vector3(-3.2, 0.2, -15), 'doodle-bio');
+
+  // Individual Floating Skill Icon Mesh Cards (spread out slightly for parallax depth)
+  const skillConfigs = [
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/java/java-original.svg', id: 'doodle-skill-languages', x: 2.2, y: 1.0, z: -29.0, size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg', id: 'doodle-skill-languages', x: 3.6, y: 0.8, z: -31.0, size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg', id: 'doodle-skill-backend', x: 2.8, y: 0.2, z: -30.0, size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg', id: 'doodle-skill-databases', x: 3.8, y: -0.2, z: -29.5, size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/amazonwebservices/amazonwebservices-original-wordmark.svg', id: 'doodle-skill-cloud', x: 2.0, y: -0.8, z: -30.5, size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg', id: 'doodle-skill-cloud', x: 3.5, y: -1.0, z: -28.5, size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/jest/jest-plain.svg', id: 'doodle-skill-testing', x: 2.7, y: -1.5, z: -31.5, size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/pytorch/pytorch-original.svg', id: 'doodle-skill-ai', x: 3.8, y: -1.3, z: -30.5, size: 1.1 }
+  ];
+
+  skillConfigs.forEach((cfg, idx) => {
+    const mesh = createRealIconDoodleMesh(cfg.iconUrl, cfg.size, new THREE.Vector3(cfg.x, cfg.y, cfg.z), cfg.id);
+    mesh.userData.floating = {
+      baseX: cfg.x,
+      baseY: cfg.y,
+      baseZ: cfg.z,
+      speedX: 0.0012 + (idx * 0.0003),
+      speedY: 0.0016 + (idx * 0.0004),
+      ampX: 0.08 + Math.random() * 0.04,
+      ampY: 0.12 + Math.random() * 0.06,
+      phaseX: idx * 0.8,
+      phaseY: idx * 1.3
+    };
+    floatingSkills.push(mesh);
+  });
+
+  // Projects portals (Z = -45)
+  // Project 1 Portal (Left side)
+  createDoodleMesh(drawProject1Doodle, 3.2, 3.2, new THREE.Vector3(-2.8, 0, -45), 'doodle-proj1');
+  // Project 2 Portal (Right side)
+  createDoodleMesh(drawProject2Doodle, 3.2, 3.2, new THREE.Vector3(2.8, 0, -45), 'doodle-proj2');
+
+  // Internship / Experience Doodle (Z = -60, Left Wall)
+  createDoodleMesh(drawAndroidDoodle, 3.4, 3.4, new THREE.Vector3(-3.0, 0, -60), 'doodle-intern');
+
+  // Certifications / Publication Frame (Z = -75, Right Wall)
+  createDoodleMesh(drawCertsDoodle, 3.5, 3.5, new THREE.Vector3(3.0, 0.4, -75), 'doodle-certs');
+
+  // Mailbox / Contact Doodle (Z = -90, Center Wall)
+  createDoodleMesh(drawMailboxDoodle, 3.4, 3.4, new THREE.Vector3(0, 0, -90), 'doodle-connect');
+}
+
+// Redraw all doodles when switching theme
+function redrawAllDoodles() {
+  interactiveObjects.forEach(mesh => {
+    const { drawFunc, canvasTexture, texture } = mesh.userData;
+    drawFunc(canvasTexture, getInkColor());
+    texture.needsUpdate = true;
+  });
+}
+
+// --- Guide Mascot (Doodle-Bot) ---
+let mascotSprite;
+let mascotCanvas;
+let mascotTexture;
+let mascotPoseState = 'idle'; // idle, walk, point
+let mascotFacingDir = 1; // 1 = right, -1 = left
+
+function initMascot() {
+  mascotCanvas = document.createElement('canvas');
+  mascotCanvas.width = 256;
+  mascotCanvas.height = 256;
+  
+  drawMascotPose(mascotCanvas, getInkColor(), mascotPoseState);
+  
+  mascotTexture = new THREE.CanvasTexture(mascotCanvas);
+  const material = new THREE.MeshBasicMaterial({
+    map: mascotTexture,
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  
+  const geometry = new THREE.PlaneGeometry(1.6, 1.6);
+  mascotSprite = new THREE.Mesh(geometry, material);
+  
+  // Position slightly ahead of the camera, to the bottom-left
+  mascotSprite.position.set(-1.2, -0.6, 0);
+  scene.add(mascotSprite);
+}
+
+function updateMascotPose(pose, direction = 1) {
+  if (mascotPoseState !== pose || mascotFacingDir !== direction) {
+    mascotPoseState = pose;
+    mascotFacingDir = direction;
+    drawMascotPose(mascotCanvas, getInkColor(), pose);
+    
+    // Handle flipping of texture on the X axis depending on facing direction
+    if (direction === -1) {
+      mascotSprite.scale.x = -1; // Flip mesh horizontally
+    } else {
+      mascotSprite.scale.x = 1;
+    }
+    
+    mascotTexture.needsUpdate = true;
+  }
+}
+
+// Animate walking wheel spokes when walking
+let lastMascotWheelUpdate = 0;
+function animateMascotWheel() {
+  if (mascotPoseState === 'walk') {
+    const now = Date.now();
+    if (now - lastMascotWheelUpdate > 100) {
+      drawMascotPose(mascotCanvas, getInkColor(), 'walk');
+      mascotTexture.needsUpdate = true;
+      lastMascotWheelUpdate = now;
+    }
+  }
+}
+
+// --- Camera & Scrolling Control ---
+let scrollPercent = 0;
+let targetCameraZ = 5;
+let currentCameraZ = 5;
+
+// Scroll Listener
+window.addEventListener('scroll', () => {
+  const scrollTop = window.scrollY;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  scrollPercent = docHeight > 0 ? scrollTop / docHeight : 0;
+  
+  // Map scroll percent (0 to 1) to camera Z (5 to -105)
+  targetCameraZ = 5 - scrollPercent * 110;
+  
+  // Audio trigger
+  if (soundEnabled) {
+    initAudio();
+    // Dynamic scratch sound volume based on scroll velocity
+    const speed = Math.min(1.0, Math.abs(targetCameraZ - currentCameraZ) * 8);
+    gsap.to(scrollGainNode.gain, { value: speed * 0.15, duration: 0.1 });
+  }
+});
+
+// Reset scratch sound volume when scrolling stops
+let scrollStopTimer;
+window.addEventListener('scroll', () => {
+  clearTimeout(scrollStopTimer);
+  scrollStopTimer = setTimeout(() => {
+    if (scrollGainNode) {
+      gsap.to(scrollGainNode.gain, { value: 0, duration: 0.3 });
+    }
+  }, 150);
+});
+
+// Handle Navigation Ribbon Clicks
+document.querySelectorAll('.nav-ribbon ul li').forEach(item => {
+  item.addEventListener('click', (e) => {
+    const zTarget = parseFloat(item.getAttribute('data-target'));
+    const targetCamZ = -zTarget;
+    const scrollTargetPercent = (5 - targetCamZ) / 110;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    
+    playClickSound();
+    
+    window.scrollTo({
+      top: scrollTargetPercent * docHeight,
+      behavior: 'smooth'
+    });
+  });
+});
+
+// Update the wiggling seed of SVG filter dynamically for wobbly doodle wiggles!
+const turbulenceNode = document.getElementById('turbulence-node');
+let seed = 0;
+setInterval(() => {
+  seed = (seed + 1) % 100;
+  if (turbulenceNode) {
+    turbulenceNode.setAttribute('seed', seed.toString());
+  }
+}, 180);
+
+// Update active 2D Overlay panels based on camera Z depth
+function updateUIOverlays(z) {
+  let activeIndex = 0;
+  
+  if (z > -8) {
+    activeIndex = 0; // Cover
+  } else if (z <= -8 && z > -23) {
+    activeIndex = 1; // Bio
+  } else if (z <= -23 && z > -38) {
+    activeIndex = 2; // Skills
+  } else if (z <= -38 && z > -53) {
+    activeIndex = 3; // Projects
+  } else if (z <= -53 && z > -68) {
+    activeIndex = 4; // Intern
+  } else if (z <= -68 && z > -83) {
+    activeIndex = 5; // Certs
+  } else {
+    activeIndex = 6; // Connect
+  }
+  
+  if (activeIndex !== activeSectionIndex) {
+    // Play page flip sound
+    playScribbleSound();
+    
+    // Deactivate current panel
+    const currentPanel = document.getElementById(`sec-${sections[activeSectionIndex]}`);
+    if (currentPanel) currentPanel.classList.remove('visible');
+    
+    // Activate new panel
+    const newPanel = document.getElementById(`sec-${sections[activeIndex]}`);
+    if (newPanel) newPanel.classList.add('visible');
+    
+    // Update navigation items
+    const navItems = document.querySelectorAll('.nav-ribbon ul li');
+    navItems.forEach((nav, idx) => {
+      if (idx === activeIndex) nav.classList.add('active');
+      else nav.classList.remove('active');
+    });
+    
+    activeSectionIndex = activeIndex;
+  }
+}
+
+// --- Raycaster & Clicking 3D Objects ---
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+window.addEventListener('click', (event) => {
+  // Disable clicking on 3D elements if modals are open
+  if (document.querySelector('.modal-overlay.visible')) return;
+
+  // Calculate mouse position in normalized device coordinates
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  
+  raycaster.setFromCamera(mouse, camera);
+  const intersects = raycaster.intersectObjects(interactiveObjects);
+  
+  if (intersects.length > 0) {
+    const clickedMesh = intersects[0].object;
+    const clickedId = clickedMesh.userData.id;
+    
+    playClickSound();
+    
+    if (clickedId === 'doodle-proj1') {
+      openProjectModal(1);
+    } else if (clickedId === 'doodle-proj2') {
+      openProjectModal(2);
+    } else if (clickedId.startsWith('doodle-skill-')) {
+      const skillName = clickedId.replace('doodle-skill-', '');
+      highlightSkillByName(skillName);
+    } else if (clickedId === 'doodle-bio') {
+      // Wiggle mascot speech bubble
+      triggerMascotSpeak("Yep, that's Jaggu's brain! Keep scrolling to check out his skills!");
+    } else if (clickedId === 'doodle-intern') {
+      triggerMascotSpeak("Mindmatrix Intern area! He wrote Java backends and GenAI workflows here!");
+    } else if (clickedId === 'doodle-certs') {
+      triggerMascotSpeak("Jaggu is Anthropic AI Fluency, OCI, and GitHub certified!");
+    } else if (clickedId === 'doodle-connect') {
+      triggerMascotSpeak("Shoot him an email at jaggureddy2004@gmail.com! Say hello!");
+    }
+  }
+});
+
+// Click listener to toggle skills details
+document.querySelectorAll('.project-summary-item').forEach(item => {
+  item.addEventListener('click', () => {
+    const projId = parseInt(item.getAttribute('data-proj'));
+    playClickSound();
+    openProjectModal(projId);
+  });
+});
+
+let currentSkillIndex = 0;
+const skillsIds = ['languages', 'backend', 'ai', 'databases', 'cloud', 'testing'];
+
+function highlightNextSkill() {
+  // Hide all details
+  document.getElementById('skills-default-text').classList.remove('active');
+  skillsIds.forEach(id => {
+    document.getElementById(`skill-desc-${id}`).classList.remove('active');
+  });
+  
+  // Show active one
+  const targetId = skillsIds[currentSkillIndex];
+  document.getElementById(`skill-desc-${targetId}`).classList.add('active');
+  
+  // Update mascot pointing direction
+  updateMascotPose('point', 1); // point right (skills are on right side)
+  triggerMascotSpeak(`Here are his skills on ${targetId.toUpperCase()}!`);
+  
+  currentSkillIndex = (currentSkillIndex + 1) % skillsIds.length;
+}
+
+function highlightSkillByName(targetId) {
+  // Hide all details
+  document.getElementById('skills-default-text').classList.remove('active');
+  skillsIds.forEach(id => {
+    document.getElementById(`skill-desc-${id}`).classList.remove('active');
+  });
+  
+  // Show active one
+  const targetEl = document.getElementById(`skill-desc-${targetId}`);
+  if (targetEl) {
+    targetEl.classList.add('active');
+  }
+  
+  // Update mascot pointing direction
+  updateMascotPose('point', 1); // point right (skills are on right side)
+  triggerMascotSpeak(`Here are my skills on ${targetId.toUpperCase()}!`);
+}
+
+// Modal handling
+function openProjectModal(id) {
+  const modalOverlay = document.getElementById('project-modals');
+  const modal1 = document.getElementById('modal-proj-1');
+  const modal2 = document.getElementById('modal-proj-2');
+  
+  modalOverlay.classList.add('visible');
+  if (id === 1) {
+    modal1.style.display = 'block';
+    modal2.style.display = 'none';
+  } else {
+    modal1.style.display = 'none';
+    modal2.style.display = 'block';
+  }
+}
+
+document.querySelectorAll('.close-modal-btn, .modal-overlay').forEach(element => {
+  element.addEventListener('click', (e) => {
+    // Only close if clicked close button or overlay backdrop itself
+    if (e.target.classList.contains('close-modal-btn') || e.target.classList.contains('modal-overlay')) {
+      playClickSound();
+      document.getElementById('project-modals').classList.remove('visible');
+    }
+  });
+});
+
+// Mascot Dialog Speech bubble helper
+let speechBubbleTimer;
+function triggerMascotSpeak(text) {
+  let bubble = document.querySelector('.mascot-speech-bubble');
+  if (!bubble) return;
+  bubble.textContent = text;
+  
+  // Pop animation
+  bubble.parentElement.classList.remove('drawIn');
+  void bubble.offsetWidth; // trigger reflow
+  bubble.parentElement.classList.add('drawIn');
+  
+  // Revert back to idle guide dialog after 4 seconds
+  clearTimeout(speechBubbleTimer);
+  speechBubbleTimer = setTimeout(() => {
+    bubble.textContent = "I'm Doodle-Bot, your guide! Keep scrolling to explore!";
+  }, 4000);
+}
+
+// --- Theme Toggle Control ---
+const themeToggle = document.getElementById('theme-toggle');
+themeToggle.addEventListener('click', () => {
+  isChalkboard = !isChalkboard;
+  
+  initAudio();
+  playClickSound();
+  
+  // Toggle class on HTML and body
+  if (isChalkboard) {
+    document.documentElement.classList.add('chalkboard-mode');
+    document.body.classList.add('chalkboard-mode');
+    themeToggle.querySelector('.lamp-bulb').textContent = '🌙';
+    themeToggle.querySelector('.toggle-text').textContent = 'Brighten Mind';
+    document.getElementById('theme-toggle').style.transform = 'translateY(10px)';
+    setTimeout(() => {
+      document.getElementById('theme-toggle').style.transform = 'translateY(0)';
+    }, 200);
+  } else {
+    document.documentElement.classList.remove('chalkboard-mode');
+    document.body.classList.remove('chalkboard-mode');
+    themeToggle.querySelector('.lamp-bulb').textContent = '💡';
+    themeToggle.querySelector('.toggle-text').textContent = 'Darken Mind';
+    document.getElementById('theme-toggle').style.transform = 'translateY(10px)';
+    setTimeout(() => {
+      document.getElementById('theme-toggle').style.transform = 'translateY(0)';
+    }, 200);
+  }
+  
+  // Re-draw WebGL lines and textures
+  drawWobblyCorridor();
+  redrawAllDoodles();
+  drawMascotPose(mascotCanvas, getInkColor(), mascotPoseState);
+  mascotTexture.needsUpdate = true;
+});
+
+// --- Sound Toggle Control ---
+const soundToggle = document.getElementById('sound-toggle');
+soundToggle.addEventListener('click', () => {
+  soundEnabled = !soundEnabled;
+  
+  if (soundEnabled) {
+    initAudio();
+    soundToggle.querySelector('.sound-icon').textContent = '🔊';
+    soundToggle.querySelector('.sound-text').textContent = 'Scribbles On';
+    playClickSound();
+  } else {
+    soundToggle.querySelector('.sound-icon').textContent = '🔈';
+    soundToggle.querySelector('.sound-text').textContent = 'Scribbles Off';
+  }
+});
+
+// --- Window Resize Handling ---
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+});
+
+// --- Animation Loop ---
+let lastTime = 0;
+
+function animate(time) {
+  requestAnimationFrame(animate);
+  
+  // 1. Smoothly interpolate camera Z
+  const deltaZ = targetCameraZ - currentCameraZ;
+  currentCameraZ += deltaZ * 0.07; // Lerp factor
+  camera.position.z = currentCameraZ;
+  
+  // 2. Head Bobbing effect proportional to scroll speed
+  const scrollSpeed = Math.abs(deltaZ);
+  if (scrollSpeed > 0.005) {
+    camera.position.y = Math.sin(time * 0.012) * scrollSpeed * 0.05;
+    camera.position.x = Math.cos(time * 0.006) * scrollSpeed * 0.03;
+  } else {
+    // Return gently to center
+    camera.position.y += (0 - camera.position.y) * 0.1;
+    camera.position.x += (0 - camera.position.x) * 0.1;
+  }
+  
+  // 3. Update Mascot floating and animation poses
+  if (mascotSprite) {
+    // Keep mascot floating in front of camera
+    mascotSprite.position.z = camera.position.z - 4.5;
+    
+    // Subtle idle floating up and down in sine wave
+    const floatOffset = Math.sin(time * 0.003) * 0.06;
+    mascotSprite.position.y = -0.55 + floatOffset;
+    
+    // Choose mascot pose based on movement
+    if (scrollSpeed > 0.08) {
+      updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
+      animateMascotWheel();
+    } else {
+      // Idle or Pointing based on Z location
+      if (activeSectionIndex === 1) {
+        updateMascotPose('point', -1); // bio is on left
+      } else if (activeSectionIndex === 2) {
+        updateMascotPose('point', 1); // skills are on right
+      } else if (activeSectionIndex === 4) {
+        updateMascotPose('point', -1); // experience is on left
+      } else if (activeSectionIndex === 5) {
+        updateMascotPose('point', 1); // certs are on right
+      } else {
+        updateMascotPose('idle', 1); // face forward/waving
+      }
+    }
+  }
+  
+  // 4. Update active UI sections based on camera Z depth
+  updateUIOverlays(currentCameraZ);
+  
+  // 5. Update floating skill icons dynamically
+  floatingSkills.forEach(mesh => {
+    const float = mesh.userData.floating;
+    if (float) {
+      mesh.position.y = float.baseY + Math.sin(time * float.speedY + float.phaseY) * float.ampY;
+      mesh.position.x = float.baseX + Math.cos(time * float.speedX + float.phaseX) * float.ampX;
+      mesh.rotation.z = Math.sin(time * 0.0015 + float.phaseX) * 0.08;
+    }
+  });
+  
+  renderer.render(scene, camera);
+}
+
+// --- Initialization ---
+drawWobblyCorridor();
+initDoodles();
+initMascot();
+
+// Start loop
+requestAnimationFrame(animate);

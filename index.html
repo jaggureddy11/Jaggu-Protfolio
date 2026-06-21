@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>R. Jagadishwar Reddy | Sketchbook Portfolio</title>
+    
+    <!-- Google Fonts for Hand-drawn Sketch Style -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@400;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <!-- Wobbly SVG Filter for Hand-drawn Line Boil Effect -->
+    <svg class="sketch-filters" style="position: absolute; width: 0; height: 0; pointer-events: none;">
+      <defs>
+        <filter id="sketch-wiggle">
+          <feTurbulence id="turbulence-node" type="fractalNoise" baseFrequency="0.04" numOctaves="2" result="noise" seed="0" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </defs>
+    </svg>
+
+    <!-- Main Container -->
+    <div id="app">
+      <!-- WebGL Canvas for 3D Hallway -->
+      <canvas id="webgl-canvas"></canvas>
+
+      <!-- Background paper grid texture layer -->
+      <div class="paper-overlay"></div>
+
+      <!-- Paper Margins and Spiral Ring (Notebook effect) -->
+      <div class="notebook-rings">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+      </div>
+
+      <!-- Theme Switcher (Hanging Lamp Doodle) -->
+      <button id="theme-toggle" class="hand-drawn-btn" title="Toggle Chalkboard Mode">
+        <span class="lamp-cord"></span>
+        <span class="lamp-bulb">💡</span>
+        <span class="toggle-text">Darken Mind</span>
+      </button>
+
+      <!-- Audio Toggle (Pencil scratch sounds) -->
+      <button id="sound-toggle" class="hand-drawn-btn" title="Toggle Sound FX">
+        <span class="sound-icon">🔈</span>
+        <span class="sound-text">Scribbles Off</span>
+      </button>
+
+      <!-- Top Hand-Drawn Navigation Ribbon -->
+      <nav class="nav-ribbon">
+        <ul>
+          <li data-target="0" class="active"><span>Cover</span></li>
+          <li data-target="15"><span>Bio</span></li>
+          <li data-target="30"><span>Skills</span></li>
+          <li data-target="45"><span>Projects</span></li>
+          <li data-target="60"><span>Intern</span></li>
+          <li data-target="75"><span>Certs</span></li>
+          <li data-target="90"><span>Connect</span></li>
+        </ul>
+      </nav>
+
+      <!-- 2D Overlay UI Panels -->
+      <div id="ui-overlays">
+        <!-- Cover Section -->
+        <section id="sec-cover" class="ui-panel visible">
+          <div class="sketch-card cover-card">
+            <h1>R. Jagadishwar Reddy</h1>
+            <p class="subtitle">Stepping Inside My Creative Mind</p>
+            <div class="mascot-introduction">
+              <span class="mascot-speech-bubble">"Hey there! I'm Doodle-Bot, your guide! Scroll down to walk through Jaggu's imagination!"</span>
+            </div>
+            <div class="scroll-prompt">
+              <span class="scroll-arrow">↓</span>
+              <p>Scroll to flip the page</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bio Section -->
+        <section id="sec-bio" class="ui-panel">
+          <div class="sketch-card bio-card">
+            <h2>01. The Core Mind (Bio)</h2>
+            <p class="handwritten-text">
+              I am a <strong>Computer Science graduate (2026)</strong> from Bengaluru, India. I build enterprise-grade applications and AI-powered systems.
+            </p>
+            <div class="notebook-bullet">
+              <span class="bullet-doodle">✏️</span>
+              <p>Focused on scalable, reliable backends and RESTful APIs.</p>
+            </div>
+            <div class="notebook-bullet">
+              <span class="bullet-doodle">✏️</span>
+              <p>Passion for Generative AI, RAG, and edge-computing models.</p>
+            </div>
+            <div class="notebook-bullet">
+              <span class="bullet-doodle">✏️</span>
+              <p>Agile developer with 80%+ unit test coverage habits.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Skills Section -->
+        <section id="sec-skills" class="ui-panel">
+          <div class="sketch-card skills-card">
+            <h2>02. The Skill Workbench</h2>
+            <p class="instruction-text">Click items on the 3D workbench to inspect details!</p>
+            <div class="skills-details-container">
+              <div id="skills-default-text" class="handwritten-text active">
+                My mind's toolbox is stacked with languages, databases, cloud, and AI architectures.
+              </div>
+              <div id="skill-desc-languages" class="skill-detail-item">
+                <h3>Languages</h3>
+                <p>Java, Python, JavaScript (ES6+), SQL</p>
+              </div>
+              <div id="skill-desc-backend" class="skill-detail-item">
+                <h3>Backend Services</h3>
+                <p>Node.js, Express.js, RESTful APIs, JWT, RBAC, clean layered architectures</p>
+              </div>
+              <div id="skill-desc-ai" class="skill-detail-item">
+                <h3>AI & GenAI</h3>
+                <p>Generative AI, Retrieval-Augmented Generation (RAG), LangChain, OpenCV, Vector Embeddings, ChromaDB</p>
+              </div>
+              <div id="skill-desc-databases" class="skill-detail-item">
+                <h3>Databases</h3>
+                <p>MongoDB, PostgreSQL, MySQL</p>
+              </div>
+              <div id="skill-desc-cloud" class="skill-detail-item">
+                <h3>Cloud & DevOps</h3>
+                <p>AWS (EC2, S3), Docker, Kubernetes, CI/CD Pipelines, GitHub Actions, Linux administration</p>
+              </div>
+              <div id="skill-desc-testing" class="skill-detail-item">
+                <h3>Testing & QA</h3>
+                <p>Unit Testing, Jest, Supertest, Code Reviews, Debugging</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Projects Section -->
+        <section id="sec-projects" class="ui-panel">
+          <div class="sketch-card projects-card">
+            <h2>03. Imagined & Built (Projects)</h2>
+            <p class="instruction-text">Click the 3D portals to open project sketchbooks!</p>
+            <div class="projects-list">
+              <div class="project-summary-item" data-proj="1">
+                <h3>1. AI Knowledge & Learning Platform</h3>
+                <p class="tech-tag">MERN | AWS | Docker | Gemini</p>
+              </div>
+              <div class="project-summary-item" data-proj="2">
+                <h3>2. Real-Time Vision Assistant</h3>
+                <p class="tech-tag">Python | RAG | OpenCV | Raspberry Pi</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Internship Section -->
+        <section id="sec-intern" class="ui-panel">
+          <div class="sketch-card intern-card">
+            <h2>04. In the Wild (Experience)</h2>
+            <div class="experience-header">
+              <h3>Android Developer Intern</h3>
+              <p class="company">Mindmatrix | Feb 2026 - May 2026</p>
+            </div>
+            <ul class="experience-list">
+              <li>Integrated AI estimation workflows and REST APIs in enterprise Android apps.</li>
+              <li>Automated operations using AI-assisted decision support and contextual data processing.</li>
+              <li>Boosted observability via structured logging and performance analysis.</li>
+              <li>Collaborated in Agile sprints, taking part in full SDLC cycles.</li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- Certifications & Publications -->
+        <section id="sec-certs" class="ui-panel">
+          <div class="sketch-card certs-card">
+            <h2>05. Stamps of Approval</h2>
+            <div class="certs-grid">
+              <div class="cert-item">
+                <span class="cert-badge">🏅</span>
+                <div>
+                  <h4>AI Fluency Framework & Foundations</h4>
+                  <p>Anthropic Academy, 2026</p>
+                </div>
+              </div>
+              <div class="cert-item">
+                <span class="cert-badge">🏅</span>
+                <div>
+                  <h4>OCI 2025 Certified Foundations Associate</h4>
+                  <p>Oracle, 2025</p>
+                </div>
+              </div>
+              <div class="cert-item">
+                <span class="cert-badge">🏅</span>
+                <div>
+                  <h4>GitHub Foundations Certified</h4>
+                  <p>GitHub, 2024</p>
+                </div>
+              </div>
+              <div class="publication-item">
+                <span class="pub-badge">📄</span>
+                <div>
+                  <h4>Exam Hall Ticket Approval System</h4>
+                  <p>Published in IJRASET, 2025</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Connect Section -->
+        <section id="sec-connect" class="ui-panel">
+          <div class="sketch-card connect-card">
+            <h2>06. Let's Chat!</h2>
+            <p class="handwritten-text">Drop a line, write a letter, or launch a paper plane my way!</p>
+            
+            <div class="contact-links">
+              <a href="mailto:jaggureddy2004@gmail.com" class="contact-link-item">
+                <span class="icon">✉️</span> jaggureddy2004@gmail.com
+              </a>
+              <a href="tel:+919110300509" class="contact-link-item">
+                <span class="icon">📞</span> +91 9110300509
+              </a>
+              <a href="https://linkedin.com/in/jaggureddy" target="_blank" class="contact-link-item">
+                <span class="icon">🔗</span> linkedin.com/in/jaggureddy
+              </a>
+              <a href="https://github.com/jaggureddy11" target="_blank" class="contact-link-item">
+                <span class="icon">🐙</span> github.com/jaggureddy11
+              </a>
+              <a href="https://bsky.app/profile/jagadishwar.bsky.social" target="_blank" class="contact-link-item">
+                <span class="icon">🦋</span> Bluesky Profile
+              </a>
+            </div>
+
+            <div class="footer-note">
+              <p>Designed with ✏️ in Bengaluru, India.</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Popups for Project Details -->
+      <div id="project-modals" class="modal-overlay">
+        <!-- Project 1 Modal -->
+        <div id="modal-proj-1" class="sketch-modal">
+          <button class="close-modal-btn">✖</button>
+          <h2>AI-Powered Knowledge & Learning Platform</h2>
+          <p class="modal-tagline">MERN Stack, AWS, Docker | 2025</p>
+          <div class="modal-body">
+            <p>An enterprise-grade full-stack MERN platform designed for developer knowledge sharing and learning automation.</p>
+            <ul>
+              <li><strong>AI Integrations:</strong> Features a built-in AI code editor, interactive AI chatbot, and automated GitHub & YouTube API content curation.</li>
+              <li><strong>Secure Vaults:</strong> Secure resource library, cloud-synced notepad, and a private code snippet vault secured with JWT and Role-Based Access Control (RBAC).</li>
+              <li><strong>DevOps Stack:</strong> Containerized using Docker and deployed on AWS EC2, backed by MongoDB Atlas cloud database.</li>
+              <li><strong>QA standard:</strong> Layered REST APIs with 80%+ unit test coverage using Jest and Supertest, complete with GitHub Actions CI/CD pipelines.</li>
+            </ul>
+            <div class="modal-footer">
+              <a href="https://github.com/jaggureddy11" target="_blank" class="modal-btn">GitHub Source</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project 2 Modal -->
+        <div id="modal-proj-2" class="sketch-modal">
+          <button class="close-modal-btn">✖</button>
+          <h2>Real-Time Vision Assistant for Accessibility</h2>
+          <p class="modal-tagline">Python, RAG, OpenCV, LangChain, ChromaDB | 2024</p>
+          <div class="modal-body">
+            <p>An AI-powered assistive system built on edge hardware (Raspberry Pi) that helps visually impaired users navigate their environments.</p>
+            <ul>
+              <li><strong>Computer Vision:</strong> Uses Raspberry Pi camera modules and OpenCV to execute real-time object detection and Optical Character Recognition (OCR) for surrounding narration.</li>
+              <li><strong>RAG QA Pipeline:</strong> Semantic search database built using LangChain, vector embeddings, and ChromaDB to support contextual voice-based question answering.</li>
+              <li><strong>System Performance:</strong> Optimized inference speed and lowered edge latency by 20% while maintaining a 92% object detection accuracy.</li>
+            </ul>
+            <div class="modal-footer">
+              <a href="https://github.com/jaggureddy11" target="_blank" class="modal-btn">GitHub Source</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollable container for page scroll height -->
+    <div class="scroll-container"></div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

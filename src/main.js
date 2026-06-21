@@ -742,11 +742,13 @@ function animate(time) {
   currentCameraZ += deltaZ * 0.07; // Lerp factor
   camera.position.z = currentCameraZ;
   
-  // 2. Head Bobbing effect proportional to scroll speed
-  const scrollSpeed = Math.abs(deltaZ);
-  if (scrollSpeed > 0.005) {
-    camera.position.y = Math.sin(time * 0.012) * scrollSpeed * 0.05;
-    camera.position.x = Math.cos(time * 0.006) * scrollSpeed * 0.03;
+  // 2. Head Bobbing effect proportional to scroll speed (smoothed & capped to prevent excessive shaking)
+  const actualVelocity = Math.abs(deltaZ) * 0.07; // Actual camera movement speed in this frame
+  const bobFactor = Math.min(0.2, actualVelocity * 0.4); // Limit the maximum bobbing amplitude
+  
+  if (bobFactor > 0.001) {
+    camera.position.y = Math.sin(time * 0.010) * bobFactor * 0.05;
+    camera.position.x = Math.cos(time * 0.005) * bobFactor * 0.03;
   } else {
     // Return gently to center
     camera.position.y += (0 - camera.position.y) * 0.1;

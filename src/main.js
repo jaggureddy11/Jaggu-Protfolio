@@ -431,12 +431,6 @@ function updateMascotPose(pose, direction = 1) {
   }
 }
 
-// Animate walking wheel spokes when walking (disabled for static image)
-let lastMascotWheelUpdate = 0;
-function animateMascotWheel() {
-  // No-op for static image
-}
-
 // --- Camera & Scrolling Control ---
 let scrollPercent = 0;
 let targetCameraZ = 5;
@@ -762,15 +756,25 @@ function animate(time) {
     // Keep mascot floating in front of camera
     mascotSprite.position.z = camera.position.z - 4.5;
     
-    // Subtle idle floating up and down in sine wave
-    const floatOffset = Math.sin(time * 0.003) * 0.06;
-    mascotSprite.position.y = -0.55 + floatOffset;
-    
     // Choose mascot pose based on movement
     if (scrollSpeed > 0.08) {
       updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
-      animateMascotWheel();
+      
+      // Simulate walking steps
+      // Vigorous bobbing for steps
+      const walkBob = Math.abs(Math.sin(time * 0.01)) * 0.2; 
+      // Side-to-side tilting for walking motion
+      const walkTilt = Math.cos(time * 0.01) * 0.15;
+      
+      mascotSprite.position.y = -0.55 + walkBob;
+      mascotSprite.rotation.z = walkTilt;
     } else {
+      // Subtle idle floating up and down
+      const floatOffset = Math.sin(time * 0.003) * 0.06;
+      mascotSprite.position.y = -0.55 + floatOffset;
+      // Gently return rotation to center when stopping
+      mascotSprite.rotation.z += (0 - mascotSprite.rotation.z) * 0.1;
+      
       // Pointing based on Z location (all UI panels are on the right)
       if (activeSectionIndex >= 1 && activeSectionIndex <= 6) {
         updateMascotPose('point', 1); // point right

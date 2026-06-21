@@ -431,69 +431,75 @@ function updateMascotPose(pose, direction = 1) {
   }
 }
 
-// --- Dust Cloud Particle System ---
-const dustClouds = [];
-let lastDustSpawn = 0;
+// --- Footprint System ---
+const footprints = [];
+let footprintTexture = null;
 
-// Create a sketchy looking dust puff texture
-const dustCanvas = document.createElement('canvas');
-dustCanvas.width = 64;
-dustCanvas.height = 64;
-const dctx = dustCanvas.getContext('2d');
-// Draw a scribble circle
-dctx.strokeStyle = '#888888';
-dctx.lineWidth = 2;
-dctx.beginPath();
-for(let i=0; i<Math.PI*2; i+=0.5) {
-  const r = 20 + Math.random() * 8;
-  if(i===0) dctx.moveTo(32 + Math.cos(i)*r, 32 + Math.sin(i)*r);
-  else dctx.lineTo(32 + Math.cos(i)*r, 32 + Math.sin(i)*r);
+function initFootprints() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  
+  ctx.strokeStyle = getInkColor();
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  
+  // Draw a sketchy cloud/footprint
+  ctx.beginPath();
+  ctx.ellipse(32, 32, 16, 8, 0, 0, Math.PI * 2);
+  ctx.moveTo(20, 32); ctx.lineTo(44, 32);
+  ctx.moveTo(26, 26); ctx.lineTo(38, 38);
+  ctx.stroke();
+
+  footprintTexture = new THREE.CanvasTexture(canvas);
 }
-dctx.closePath();
-dctx.stroke();
-dctx.fillStyle = 'rgba(200, 200, 200, 0.4)';
-dctx.fill();
 
-const dustTexture = new THREE.CanvasTexture(dustCanvas);
-const dustGeometry = new THREE.PlaneGeometry(1.2, 1.2);
+let lastFootprintZ = 0;
 
-function spawnDustCloud(x, y, z) {
-  const material = new THREE.MeshBasicMaterial({ 
-    map: dustTexture, 
-    transparent: true, 
-    opacity: 1.0,
-    depthWrite: false 
+function spawnFootprint(x, y, z, walkCycle) {
+  if (!footprintTexture) initFootprints();
+  
+  // Only spawn a footprint every so often
+  if (Math.abs(z - lastFootprintZ) < 0.6) return;
+  lastFootprintZ = z;
+  
+  const material = new THREE.MeshBasicMaterial({
+    map: footprintTexture,
+    transparent: true,
+    opacity: 0.5,
+    depthWrite: false,
+    color: getInkColor() // adapt to theme
   });
-  const mesh = new THREE.Mesh(dustGeometry, material);
   
-  // Place near the feet
-  mesh.position.set(x + (Math.random() - 0.5) * 0.8, y - 1.2, z + 0.5);
-  mesh.rotation.z = Math.random() * Math.PI * 2;
+  const geometry = new THREE.PlaneGeometry(0.6, 0.6);
+  const mesh = new THREE.Mesh(geometry, material);
   
-  const scale = 0.5 + Math.random() * 0.8;
-  mesh.scale.set(scale, scale, 1);
-  
-  mesh.userData = {
-    opacity: 0.8,
-    scaleSpeed: 1.03 + Math.random() * 0.04,
-    fadeSpeed: 0.02 + Math.random() * 0.03,
-    vx: (Math.random() - 0.5) * 0.03,
-    vy: Math.random() * 0.02 + 0.01
-  };
+  mesh.rotation.x = -Math.PI / 2; // lie flat on ground
+  // Alternate left/right footprint based on walk cycle sine
+  const isLeftFoot = Math.sin(walkCycle) > 0;
+  const xOffset = isLeftFoot ? -0.3 : 0.3;
+  mesh.position.set(x + xOffset, y, z + 0.2); // slightly behind
+  mesh.rotation.z = (Math.random() - 0.5) * 0.5; // random angle jitter
   
   scene.add(mesh);
-  dustClouds.push(mesh);
+  footprints.push({ mesh, life: 1.0 });
 }
 
-// Animate walking wheel spokes when walking (disabled for static image)
-function animateMascotWheel() {
-  // Re-purposed to spawn dust clouds
-  const now = performance.now();
-  if (now - lastDustSpawn > 100) { // spawn every 100ms
-    if (mascotSprite) {
-      spawnDustCloud(mascotSprite.position.x, mascotSprite.position.y, mascotSprite.position.z);
+function updateFootprints() {
+  for (let i = footprints.length - 1; i >= 0; i--) {
+    const fp = footprints[i];
+    fp.life -= 0.015; // fixed fade out
+    
+    if (fp.life <= 0) {
+      scene.remove(fp.mesh);
+      fp.mesh.geometry.dispose();
+      fp.mesh.material.dispose();
+      footprints.splice(i, 1);
+    } else {
+      fp.mesh.material.opacity = fp.life * 0.5;
+      fp.mesh.position.y += 0.002; // float up slightly like dust
     }
-    lastDustSpawn = now;
   }
 }
 
@@ -829,8 +835,21 @@ function animate(time) {
     // Choose mascot pose based on movement
     if (scrollSpeed > 0.08) {
       updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
-      animateMascotWheel();
+      
+      // Paper Mario walking effect (tilt and bounce)
+      const walkCycle = currentCameraZ * 2.0; 
+      mascotSprite.rotation.z = Math.sin(walkCycle) * 0.15; // tilt left/right
+      const bounce = Math.abs(Math.cos(walkCycle)) * 0.15;
+      mascotSprite.position.y = -0.55 + floatOffset + bounce; // jump up
+      mascotSprite.scale.y = 1.0 - (bounce * 0.5); // squash
+      
+      spawnFootprint(mascotSprite.position.x, -1.45, mascotSprite.position.z, walkCycle);
     } else {
+      // Return to normal smoothly
+      mascotSprite.rotation.z += (0 - mascotSprite.rotation.z) * 0.2;
+      mascotSprite.scale.y += (1.0 - mascotSprite.scale.y) * 0.2;
+      mascotSprite.position.y = -0.55 + floatOffset;
+      
       // Pointing based on Z location (all UI panels are on the right)
       if (activeSectionIndex >= 1 && activeSectionIndex <= 6) {
         updateMascotPose('point', 1); // point right
@@ -839,6 +858,8 @@ function animate(time) {
       }
     }
   }
+  
+  updateFootprints();
   
   // 4. Update active UI sections based on camera Z depth
   updateUIOverlays(currentCameraZ);
@@ -856,25 +877,6 @@ function animate(time) {
       mesh.rotation.z = Math.sin(time * 0.0015 + float.phaseX) * 0.08;
     }
   });
-  
-  // 6. Update and fade dust clouds
-  for (let i = dustClouds.length - 1; i >= 0; i--) {
-    const cloud = dustClouds[i];
-    const data = cloud.userData;
-    
-    cloud.position.x += data.vx;
-    cloud.position.y += data.vy;
-    cloud.scale.multiplyScalar(data.scaleSpeed);
-    
-    data.opacity -= data.fadeSpeed;
-    cloud.material.opacity = data.opacity;
-    
-    if (data.opacity <= 0) {
-      scene.remove(cloud);
-      cloud.material.dispose(); // clean up memory
-      dustClouds.splice(i, 1);
-    }
-  }
   
   renderer.render(scene, camera);
 }

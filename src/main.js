@@ -755,17 +755,11 @@ function animate(time) {
       updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
       animateMascotWheel();
     } else {
-      // Idle or Pointing based on Z location
-      if (activeSectionIndex === 1) {
-        updateMascotPose('point', -1); // bio is on left
-      } else if (activeSectionIndex === 2) {
-        updateMascotPose('point', 1); // skills are on right
-      } else if (activeSectionIndex === 4) {
-        updateMascotPose('point', -1); // experience is on left
-      } else if (activeSectionIndex === 5) {
-        updateMascotPose('point', 1); // certs are on right
+      // Pointing based on Z location (all UI panels are on the right)
+      if (activeSectionIndex >= 1 && activeSectionIndex <= 6) {
+        updateMascotPose('point', 1); // point right
       } else {
-        updateMascotPose('idle', 1); // face forward/waving
+        updateMascotPose('idle', 1); // face forward for cover
       }
     }
   }

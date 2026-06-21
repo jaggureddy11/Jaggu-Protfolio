@@ -775,8 +775,8 @@ function animate(time) {
     
     // Choose mascot pose based on movement
     if (scrollSpeed > 0.08) {
-      walkCycleTime += scrollSpeed * 0.15;
-      const walkFrame = Math.floor(walkCycleTime) % 2;
+      // Sync walking cycle directly to the mascot's position along the Z axis
+      const walkFrame = Math.floor(Math.abs(currentCameraZ) * 2.0) % 2;
       
       if (walkFrame === 0) {
         updateMascotPose('idle', deltaZ < 0 ? 1 : -1);

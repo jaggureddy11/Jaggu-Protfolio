@@ -431,77 +431,7 @@ function updateMascotPose(pose, direction = 1) {
   }
 }
 
-// --- Footprint System ---
-const footprints = [];
-let footprintTexture = null;
-
-function initFootprints() {
-  const canvas = document.createElement('canvas');
-  canvas.width = 64;
-  canvas.height = 64;
-  const ctx = canvas.getContext('2d');
-  
-  ctx.strokeStyle = getInkColor();
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-  
-  // Draw a sketchy cloud/footprint
-  ctx.beginPath();
-  ctx.ellipse(32, 32, 16, 8, 0, 0, Math.PI * 2);
-  ctx.moveTo(20, 32); ctx.lineTo(44, 32);
-  ctx.moveTo(26, 26); ctx.lineTo(38, 38);
-  ctx.stroke();
-
-  footprintTexture = new THREE.CanvasTexture(canvas);
-}
-
-let lastFootprintZ = 0;
-
-function spawnFootprint(x, y, z, walkCycle) {
-  if (!footprintTexture) initFootprints();
-  
-  // Only spawn a footprint every so often
-  if (Math.abs(z - lastFootprintZ) < 0.6) return;
-  lastFootprintZ = z;
-  
-  const material = new THREE.MeshBasicMaterial({
-    map: footprintTexture,
-    transparent: true,
-    opacity: 0.5,
-    depthWrite: false,
-    color: getInkColor() // adapt to theme
-  });
-  
-  const geometry = new THREE.PlaneGeometry(0.6, 0.6);
-  const mesh = new THREE.Mesh(geometry, material);
-  
-  mesh.rotation.x = -Math.PI / 2; // lie flat on ground
-  // Alternate left/right footprint based on walk cycle sine
-  const isLeftFoot = Math.sin(walkCycle) > 0;
-  const xOffset = isLeftFoot ? -0.3 : 0.3;
-  mesh.position.set(x + xOffset, y, z + 0.2); // slightly behind
-  mesh.rotation.z = (Math.random() - 0.5) * 0.5; // random angle jitter
-  
-  scene.add(mesh);
-  footprints.push({ mesh, life: 1.0 });
-}
-
-function updateFootprints() {
-  for (let i = footprints.length - 1; i >= 0; i--) {
-    const fp = footprints[i];
-    fp.life -= 0.015; // fixed fade out
-    
-    if (fp.life <= 0) {
-      scene.remove(fp.mesh);
-      fp.mesh.geometry.dispose();
-      fp.mesh.material.dispose();
-      footprints.splice(i, 1);
-    } else {
-      fp.mesh.material.opacity = fp.life * 0.5;
-      fp.mesh.position.y += 0.002; // float up slightly like dust
-    }
-  }
-}
+// --- Mascot Movement & Scrolling Control ---
 
 // --- Camera & Scrolling Control ---
 let scrollPercent = 0;
@@ -832,24 +762,14 @@ function animate(time) {
     const floatOffset = Math.sin(time * 0.003) * 0.06;
     mascotSprite.position.y = -0.55 + floatOffset;
     
+    // Ensure no walking tilt, bounce, or squash is left on the mascot
+    mascotSprite.rotation.z = 0;
+    mascotSprite.scale.y = 1.0;
+    
     // Choose mascot pose based on movement
     if (scrollSpeed > 0.08) {
       updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
-      
-      // Paper Mario walking effect (tilt and bounce)
-      const walkCycle = currentCameraZ * 2.0; 
-      mascotSprite.rotation.z = Math.sin(walkCycle) * 0.15; // tilt left/right
-      const bounce = Math.abs(Math.cos(walkCycle)) * 0.15;
-      mascotSprite.position.y = -0.55 + floatOffset + bounce; // jump up
-      mascotSprite.scale.y = 1.0 - (bounce * 0.5); // squash
-      
-      spawnFootprint(mascotSprite.position.x, -1.45, mascotSprite.position.z, walkCycle);
     } else {
-      // Return to normal smoothly
-      mascotSprite.rotation.z += (0 - mascotSprite.rotation.z) * 0.2;
-      mascotSprite.scale.y += (1.0 - mascotSprite.scale.y) * 0.2;
-      mascotSprite.position.y = -0.55 + floatOffset;
-      
       // Pointing based on Z location (all UI panels are on the right)
       if (activeSectionIndex >= 1 && activeSectionIndex <= 6) {
         updateMascotPose('point', 1); // point right
@@ -858,8 +778,6 @@ function animate(time) {
       }
     }
   }
-  
-  updateFootprints();
   
   // 4. Update active UI sections based on camera Z depth
   updateUIOverlays(currentCameraZ);

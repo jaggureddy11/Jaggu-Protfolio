@@ -431,6 +431,72 @@ function updateMascotPose(pose, direction = 1) {
   }
 }
 
+// --- Dust Cloud Particle System ---
+const dustClouds = [];
+let lastDustSpawn = 0;
+
+// Create a sketchy looking dust puff texture
+const dustCanvas = document.createElement('canvas');
+dustCanvas.width = 64;
+dustCanvas.height = 64;
+const dctx = dustCanvas.getContext('2d');
+// Draw a scribble circle
+dctx.strokeStyle = '#888888';
+dctx.lineWidth = 2;
+dctx.beginPath();
+for(let i=0; i<Math.PI*2; i+=0.5) {
+  const r = 20 + Math.random() * 8;
+  if(i===0) dctx.moveTo(32 + Math.cos(i)*r, 32 + Math.sin(i)*r);
+  else dctx.lineTo(32 + Math.cos(i)*r, 32 + Math.sin(i)*r);
+}
+dctx.closePath();
+dctx.stroke();
+dctx.fillStyle = 'rgba(200, 200, 200, 0.4)';
+dctx.fill();
+
+const dustTexture = new THREE.CanvasTexture(dustCanvas);
+const dustGeometry = new THREE.PlaneGeometry(1.2, 1.2);
+
+function spawnDustCloud(x, y, z) {
+  const material = new THREE.MeshBasicMaterial({ 
+    map: dustTexture, 
+    transparent: true, 
+    opacity: 1.0,
+    depthWrite: false 
+  });
+  const mesh = new THREE.Mesh(dustGeometry, material);
+  
+  // Place near the feet
+  mesh.position.set(x + (Math.random() - 0.5) * 0.8, y - 1.2, z + 0.5);
+  mesh.rotation.z = Math.random() * Math.PI * 2;
+  
+  const scale = 0.5 + Math.random() * 0.8;
+  mesh.scale.set(scale, scale, 1);
+  
+  mesh.userData = {
+    opacity: 0.8,
+    scaleSpeed: 1.03 + Math.random() * 0.04,
+    fadeSpeed: 0.02 + Math.random() * 0.03,
+    vx: (Math.random() - 0.5) * 0.03,
+    vy: Math.random() * 0.02 + 0.01
+  };
+  
+  scene.add(mesh);
+  dustClouds.push(mesh);
+}
+
+// Animate walking wheel spokes when walking (disabled for static image)
+function animateMascotWheel() {
+  // Re-purposed to spawn dust clouds
+  const now = performance.now();
+  if (now - lastDustSpawn > 100) { // spawn every 100ms
+    if (mascotSprite) {
+      spawnDustCloud(mascotSprite.position.x, mascotSprite.position.y, mascotSprite.position.z);
+    }
+    lastDustSpawn = now;
+  }
+}
+
 // --- Camera & Scrolling Control ---
 let scrollPercent = 0;
 let targetCameraZ = 5;
@@ -756,25 +822,15 @@ function animate(time) {
     // Keep mascot floating in front of camera
     mascotSprite.position.z = camera.position.z - 4.5;
     
+    // Subtle idle floating up and down in sine wave
+    const floatOffset = Math.sin(time * 0.003) * 0.06;
+    mascotSprite.position.y = -0.55 + floatOffset;
+    
     // Choose mascot pose based on movement
     if (scrollSpeed > 0.08) {
       updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
-      
-      // Simulate walking steps
-      // Vigorous bobbing for steps
-      const walkBob = Math.abs(Math.sin(time * 0.01)) * 0.2; 
-      // Side-to-side tilting for walking motion
-      const walkTilt = Math.cos(time * 0.01) * 0.15;
-      
-      mascotSprite.position.y = -0.55 + walkBob;
-      mascotSprite.rotation.z = walkTilt;
+      animateMascotWheel();
     } else {
-      // Subtle idle floating up and down
-      const floatOffset = Math.sin(time * 0.003) * 0.06;
-      mascotSprite.position.y = -0.55 + floatOffset;
-      // Gently return rotation to center when stopping
-      mascotSprite.rotation.z += (0 - mascotSprite.rotation.z) * 0.1;
-      
       // Pointing based on Z location (all UI panels are on the right)
       if (activeSectionIndex >= 1 && activeSectionIndex <= 6) {
         updateMascotPose('point', 1); // point right
@@ -800,6 +856,25 @@ function animate(time) {
       mesh.rotation.z = Math.sin(time * 0.0015 + float.phaseX) * 0.08;
     }
   });
+  
+  // 6. Update and fade dust clouds
+  for (let i = dustClouds.length - 1; i >= 0; i--) {
+    const cloud = dustClouds[i];
+    const data = cloud.userData;
+    
+    cloud.position.x += data.vx;
+    cloud.position.y += data.vy;
+    cloud.scale.multiplyScalar(data.scaleSpeed);
+    
+    data.opacity -= data.fadeSpeed;
+    cloud.material.opacity = data.opacity;
+    
+    if (data.opacity <= 0) {
+      scene.remove(cloud);
+      cloud.material.dispose(); // clean up memory
+      dustClouds.splice(i, 1);
+    }
+  }
   
   renderer.render(scene, camera);
 }

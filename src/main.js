@@ -6,9 +6,10 @@ import {
   drawProject2Doodle,
   drawAndroidDoodle,
   drawCertsDoodle,
-  drawMailboxDoodle,
-  drawMascotPose
+  drawMailboxDoodle
 } from './doodles.js';
+
+import mascotImgUrl from './assets/mascot.png';
 
 // --- State Management ---
 let isChalkboard = false;
@@ -370,24 +371,21 @@ let mascotPoseState = 'idle'; // idle, walk, point
 let mascotFacingDir = 1; // 1 = right, -1 = left
 
 function initMascot() {
-  mascotCanvas = document.createElement('canvas');
-  mascotCanvas.width = 256;
-  mascotCanvas.height = 256;
+  const textureLoader = new THREE.TextureLoader();
+  mascotTexture = textureLoader.load(mascotImgUrl);
   
-  drawMascotPose(mascotCanvas, getInkColor(), mascotPoseState);
-  
-  mascotTexture = new THREE.CanvasTexture(mascotCanvas);
   const material = new THREE.MeshBasicMaterial({
     map: mascotTexture,
     transparent: true,
     side: THREE.DoubleSide
   });
   
-  const geometry = new THREE.PlaneGeometry(1.6, 1.6);
+  // Image is 682x1024, so aspect ratio is ~0.666. If width is 1.4, height should be ~2.1
+  const geometry = new THREE.PlaneGeometry(1.4, 2.1);
   mascotSprite = new THREE.Mesh(geometry, material);
   
   // Position slightly ahead of the camera, to the bottom-left
-  mascotSprite.position.set(-1.2, -0.6, 0);
+  mascotSprite.position.set(-1.2, -0.4, 0);
   scene.add(mascotSprite);
 }
 
@@ -395,7 +393,6 @@ function updateMascotPose(pose, direction = 1) {
   if (mascotPoseState !== pose || mascotFacingDir !== direction) {
     mascotPoseState = pose;
     mascotFacingDir = direction;
-    drawMascotPose(mascotCanvas, getInkColor(), pose);
     
     // Handle flipping of texture on the X axis depending on facing direction
     if (direction === -1) {
@@ -403,22 +400,13 @@ function updateMascotPose(pose, direction = 1) {
     } else {
       mascotSprite.scale.x = 1;
     }
-    
-    mascotTexture.needsUpdate = true;
   }
 }
 
-// Animate walking wheel spokes when walking
+// Animate walking wheel spokes when walking (disabled for static image)
 let lastMascotWheelUpdate = 0;
 function animateMascotWheel() {
-  if (mascotPoseState === 'walk') {
-    const now = Date.now();
-    if (now - lastMascotWheelUpdate > 100) {
-      drawMascotPose(mascotCanvas, getInkColor(), 'walk');
-      mascotTexture.needsUpdate = true;
-      lastMascotWheelUpdate = now;
-    }
-  }
+  // No-op for static image
 }
 
 // --- Camera & Scrolling Control ---
@@ -691,8 +679,8 @@ themeToggle.addEventListener('click', () => {
   // Re-draw WebGL lines and textures
   drawWobblyCorridor();
   redrawAllDoodles();
-  drawMascotPose(mascotCanvas, getInkColor(), mascotPoseState);
-  mascotTexture.needsUpdate = true;
+  // Redraw mascot (no-op since it's a static image now)
+  // mascotTexture.needsUpdate = true;
 });
 
 // --- Sound Toggle Control ---

@@ -45,7 +45,7 @@ This portfolio was designed to be playful and personal rather than corporate. It
 
 ## 💡 Prompt
 
-> Create a portfolio website as a hand-drawn 3D world where visitors can physically explore a creator's mind. Make it playful, personal, and feel like a sketchbook brought to life."
+> Create a portfolio website as a hand-drawn 3D world where visitors can physically explore a creator's mind. Make it playful, personal, and feel like a sketchbook brought to life.
 > 
 > Build the entire experience inside an interactive 3D hallway
 > 

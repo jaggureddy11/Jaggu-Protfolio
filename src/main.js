@@ -11,6 +11,7 @@ import {
 
 import mascotImgUrl from './assets/mascot.png';
 import mascotPointImgUrl from './assets/mascot_point.png';
+import mascotPassImgUrl from './assets/mascot_pass.png';
 
 // --- State Management ---
 let isChalkboard = false;
@@ -385,13 +386,16 @@ let mascotSprite;
 let mascotCanvas;
 let mascotTexture;
 let mascotPointTexture;
+let mascotPassTexture;
 let mascotPoseState = 'idle'; // idle, walk, point
 let mascotFacingDir = 1; // 1 = right, -1 = left
+let walkCycleTime = 0;
 
 function initMascot() {
   const textureLoader = new THREE.TextureLoader();
   mascotTexture = textureLoader.load(mascotImgUrl);
   mascotPointTexture = textureLoader.load(mascotPointImgUrl);
+  mascotPassTexture = textureLoader.load(mascotPassImgUrl);
   
   const material = new THREE.MeshBasicMaterial({
     map: mascotTexture,
@@ -413,9 +417,11 @@ function updateMascotPose(pose, direction = 1) {
     mascotPoseState = pose;
     mascotFacingDir = direction;
     
-    // Switch texture if pointing
+    // Switch texture depending on pose
     if (pose === 'point') {
       mascotSprite.material.map = mascotPointTexture;
+    } else if (pose === 'walk') {
+      mascotSprite.material.map = mascotPassTexture;
     } else {
       mascotSprite.material.map = mascotTexture;
     }
@@ -771,7 +777,14 @@ function animate(time) {
     
     // Choose mascot pose based on movement
     if (scrollSpeed > 0.08) {
-      updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
+      walkCycleTime += scrollSpeed * 0.15;
+      const walkFrame = Math.floor(walkCycleTime) % 2;
+      
+      if (walkFrame === 0) {
+        updateMascotPose('idle', deltaZ < 0 ? 1 : -1);
+      } else {
+        updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
+      }
     } else {
       // Pointing based on Z location (all UI panels are on the right)
       if (activeSectionIndex >= 1 && activeSectionIndex <= 6) {

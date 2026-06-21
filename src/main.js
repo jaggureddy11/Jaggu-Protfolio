@@ -313,28 +313,41 @@ function initDoodles() {
 
   // Individual Floating Skill Icon Mesh Cards (spread out slightly for parallax depth)
   const skillConfigs = [
-    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/java/java-original.svg', id: 'doodle-skill-languages', x: 2.2, y: 1.0, z: -29.0, size: 1.1 },
-    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg', id: 'doodle-skill-languages', x: 3.6, y: 0.8, z: -31.0, size: 1.1 },
-    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg', id: 'doodle-skill-backend', x: 2.8, y: 0.2, z: -30.0, size: 1.1 },
-    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg', id: 'doodle-skill-databases', x: 3.8, y: -0.2, z: -29.5, size: 1.1 },
-    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/amazonwebservices/amazonwebservices-original-wordmark.svg', id: 'doodle-skill-cloud', x: 2.0, y: -0.8, z: -30.5, size: 1.1 },
-    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg', id: 'doodle-skill-cloud', x: 3.5, y: -1.0, z: -28.5, size: 1.1 },
-    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/jest/jest-plain.svg', id: 'doodle-skill-testing', x: 2.7, y: -1.5, z: -31.5, size: 1.1 },
-    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/pytorch/pytorch-original.svg', id: 'doodle-skill-ai', x: 3.8, y: -1.3, z: -30.5, size: 1.1 }
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/java/java-original.svg', id: 'doodle-skill-languages', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/python/python-original.svg', id: 'doodle-skill-languages', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg', id: 'doodle-skill-frontend', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/postgresql/postgresql-original.svg', id: 'doodle-skill-databases', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/amazonwebservices/amazonwebservices-original-wordmark.svg', id: 'doodle-skill-cloud', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/docker/docker-original.svg', id: 'doodle-skill-cloud', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/jest/jest-plain.svg', id: 'doodle-skill-testing', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/pytorch/pytorch-original.svg', id: 'doodle-skill-ai', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/react/react-original.svg', id: 'doodle-skill-frontend', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/nodejs/nodejs-original.svg', id: 'doodle-skill-backend', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/typescript/typescript-original.svg', id: 'doodle-skill-languages', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/mongodb/mongodb-original.svg', id: 'doodle-skill-databases', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/git/git-original.svg', id: 'doodle-skill-tools', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/mysql/mysql-original.svg', id: 'doodle-skill-databases', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/spring/spring-original.svg', id: 'doodle-skill-backend', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/html5/html5-original.svg', id: 'doodle-skill-frontend', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/css3/css3-original.svg', id: 'doodle-skill-frontend', size: 1.1 },
+    { iconUrl: 'https://raw.githubusercontent.com/devicons/devicon/master/icons/linux/linux-original.svg', id: 'doodle-skill-tools', size: 1.1 }
   ];
 
   skillConfigs.forEach((cfg, idx) => {
-    const mesh = createRealIconDoodleMesh(cfg.iconUrl, cfg.size, new THREE.Vector3(cfg.x, cfg.y, cfg.z), cfg.id);
+    // Initial position doesn't matter, it will be updated in the render loop
+    // But we'll place them roughly at z=-30 for interactions
+    const mesh = createRealIconDoodleMesh(cfg.iconUrl, cfg.size, new THREE.Vector3(0, 0, -30), cfg.id);
+    
+    // Distribute them evenly around a circle
+    const angleOffset = (idx / skillConfigs.length) * Math.PI * 2;
+    
     mesh.userData.floating = {
-      baseX: cfg.x,
-      baseY: cfg.y,
-      baseZ: cfg.z,
-      speedX: 0.0012 + (idx * 0.0003),
-      speedY: 0.0016 + (idx * 0.0004),
-      ampX: 0.08 + Math.random() * 0.04,
-      ampY: 0.12 + Math.random() * 0.06,
-      phaseX: idx * 0.8,
-      phaseY: idx * 1.3
+      centerX: -1.0, // center it slightly to the left since UI card is on the right
+      centerY: 0.5,  // slightly above the floor
+      radius: 2.2,   // radius of the circle
+      angleOffset: angleOffset,
+      speed: 0.0008, // rotation speed
+      phaseX: idx * 0.8 // for subtle rotation of the icon itself
     };
     floatingSkills.push(mesh);
   });
@@ -767,12 +780,15 @@ function animate(time) {
   // 4. Update active UI sections based on camera Z depth
   updateUIOverlays(currentCameraZ);
   
-  // 5. Update floating skill icons dynamically
+  // 5. Update floating skill icons dynamically (circular rotation)
   floatingSkills.forEach(mesh => {
     const float = mesh.userData.floating;
     if (float) {
-      mesh.position.y = float.baseY + Math.sin(time * float.speedY + float.phaseY) * float.ampY;
-      mesh.position.x = float.baseX + Math.cos(time * float.speedX + float.phaseX) * float.ampX;
+      const currentAngle = float.angleOffset + time * float.speed;
+      mesh.position.x = float.centerX + Math.cos(currentAngle) * float.radius;
+      mesh.position.y = float.centerY + Math.sin(currentAngle) * float.radius;
+      
+      // Keep subtle rotation on the z-axis for a floating effect
       mesh.rotation.z = Math.sin(time * 0.0015 + float.phaseX) * 0.08;
     }
   });
@@ -782,8 +798,8 @@ function animate(time) {
 
 // --- Initialization ---
 drawWobblyCorridor();
-initDoodles();
 initMascot();
+initDoodles();
 
 // Start loop
 requestAnimationFrame(animate);

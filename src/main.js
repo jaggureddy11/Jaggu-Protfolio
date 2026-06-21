@@ -743,7 +743,8 @@ function animate(time) {
   camera.position.z = currentCameraZ;
   
   // 2. Head Bobbing effect proportional to scroll speed (smoothed & capped to prevent excessive shaking)
-  const actualVelocity = Math.abs(deltaZ) * 0.07; // Actual camera movement speed in this frame
+  const scrollSpeed = Math.abs(deltaZ);
+  const actualVelocity = scrollSpeed * 0.07; // Actual camera movement speed in this frame
   const bobFactor = Math.min(0.2, actualVelocity * 0.4); // Limit the maximum bobbing amplitude
   
   if (bobFactor > 0.001) {

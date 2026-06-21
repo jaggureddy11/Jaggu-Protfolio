@@ -11,7 +11,6 @@ import {
 
 import mascotImgUrl from './assets/mascot.png';
 import mascotPointImgUrl from './assets/mascot_point.png';
-import mascotWalkSheetUrl from './assets/mascot_walk_sheet.png';
 
 // --- State Management ---
 let isChalkboard = false;
@@ -386,21 +385,13 @@ let mascotSprite;
 let mascotCanvas;
 let mascotTexture;
 let mascotPointTexture;
-let mascotWalkTexture;
 let mascotPoseState = 'idle'; // idle, walk, point
 let mascotFacingDir = 1; // 1 = right, -1 = left
-let mascotWalkTime = 0;
 
 function initMascot() {
   const textureLoader = new THREE.TextureLoader();
   mascotTexture = textureLoader.load(mascotImgUrl);
   mascotPointTexture = textureLoader.load(mascotPointImgUrl);
-  mascotWalkTexture = textureLoader.load(mascotWalkSheetUrl);
-  
-  // Set up walking spritesheet texture mapping (4 columns, 1 row)
-  mascotWalkTexture.wrapS = THREE.RepeatWrapping;
-  mascotWalkTexture.wrapT = THREE.RepeatWrapping;
-  mascotWalkTexture.repeat.set(0.25, 1.0);
   
   const material = new THREE.MeshBasicMaterial({
     map: mascotTexture,
@@ -422,28 +413,94 @@ function updateMascotPose(pose, direction = 1) {
     mascotPoseState = pose;
     mascotFacingDir = direction;
     
-    // Switch texture and adjust aspect ratio scaling dynamically to prevent stretching
+    // Switch texture if pointing
     if (pose === 'point') {
       mascotSprite.material.map = mascotPointTexture;
-      mascotSprite.scale.set(direction, 1, 1);
-    } else if (pose === 'walk') {
-      mascotSprite.material.map = mascotWalkTexture;
-      // Walking frame aspect ratio is 256/682 = ~0.375.
-      // Since geometry is 1.4x2.1 (0.666), scale width by 0.375 / 0.666 = 0.5625
-      mascotSprite.scale.set(0.5625 * direction, 1, 1);
     } else {
       mascotSprite.material.map = mascotTexture;
-      mascotSprite.scale.set(direction, 1, 1);
+    }
+    
+    // Handle flipping of texture on the X axis depending on facing direction
+    if (direction === -1) {
+      mascotSprite.scale.x = -1; // Flip mesh horizontally
+    } else {
+      mascotSprite.scale.x = 1;
     }
     
     mascotSprite.material.needsUpdate = true;
   }
 }
 
-// Animate walking wheel spokes when walking (disabled for static image)
-let lastMascotWheelUpdate = 0;
-function animateMascotWheel() {
-  // No-op for static image
+// --- Footprint System ---
+const footprints = [];
+let footprintTexture = null;
+
+function initFootprints() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 64;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  
+  ctx.strokeStyle = getInkColor();
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  
+  // Draw a sketchy cloud/footprint
+  ctx.beginPath();
+  ctx.ellipse(32, 32, 16, 8, 0, 0, Math.PI * 2);
+  ctx.moveTo(20, 32); ctx.lineTo(44, 32);
+  ctx.moveTo(26, 26); ctx.lineTo(38, 38);
+  ctx.stroke();
+
+  footprintTexture = new THREE.CanvasTexture(canvas);
+}
+
+let lastFootprintZ = 0;
+
+function spawnFootprint(x, y, z, walkCycle) {
+  if (!footprintTexture) initFootprints();
+  
+  // Only spawn a footprint every so often
+  if (Math.abs(z - lastFootprintZ) < 0.6) return;
+  lastFootprintZ = z;
+  
+  const material = new THREE.MeshBasicMaterial({
+    map: footprintTexture,
+    transparent: true,
+    opacity: 0.5,
+    depthWrite: false,
+    color: getInkColor() // adapt to theme
+  });
+  
+  const geometry = new THREE.PlaneGeometry(0.6, 0.6);
+  const mesh = new THREE.Mesh(geometry, material);
+  
+  mesh.rotation.x = -Math.PI / 2; // lie flat on ground
+  // Alternate left/right footprint based on walk cycle sine
+  const isLeftFoot = Math.sin(walkCycle) > 0;
+  const xOffset = isLeftFoot ? -0.3 : 0.3;
+  mesh.position.set(x + xOffset, y, z + 0.2); // slightly behind
+  mesh.rotation.z = (Math.random() - 0.5) * 0.5; // random angle jitter
+  
+  scene.add(mesh);
+  footprints.push({ mesh, life: 1.0 });
+}
+
+function updateFootprints() {
+  for (let i = footprints.length - 1; i >= 0; i--) {
+    const fp = footprints[i];
+    fp.life -= 0.015; // fixed fade out
+    
+    if (fp.life <= 0) {
+      scene.remove(fp.mesh);
+      fp.mesh.geometry.dispose();
+      fp.mesh.material.dispose();
+      footprints.splice(i, 1);
+    } else {
+      fp.mesh.material.opacity = fp.life * 0.5;
+      fp.mesh.position.y += 0.002; // float up slightly like dust
+    }
+  }
 }
 
 // --- Camera & Scrolling Control ---
@@ -779,16 +836,20 @@ function animate(time) {
     if (scrollSpeed > 0.08) {
       updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
       
-      // Animate the walking frames based on scrolling direction and velocity
-      // deltaZ < 0 means scrolling down (walking forward)
-      // We scale the animation progress to scroll speed
-      mascotWalkTime -= deltaZ * 3.0;
-      let frameIndex = Math.floor(mascotWalkTime) % 4;
-      if (frameIndex < 0) frameIndex += 4;
-      mascotWalkTexture.offset.x = frameIndex * 0.25;
+      // Paper Mario walking effect (tilt and bounce)
+      const walkCycle = currentCameraZ * 2.0; 
+      mascotSprite.rotation.z = Math.sin(walkCycle) * 0.15; // tilt left/right
+      const bounce = Math.abs(Math.cos(walkCycle)) * 0.15;
+      mascotSprite.position.y = -0.55 + floatOffset + bounce; // jump up
+      mascotSprite.scale.y = 1.0 - (bounce * 0.5); // squash
       
-      animateMascotWheel();
+      spawnFootprint(mascotSprite.position.x, -1.45, mascotSprite.position.z, walkCycle);
     } else {
+      // Return to normal smoothly
+      mascotSprite.rotation.z += (0 - mascotSprite.rotation.z) * 0.2;
+      mascotSprite.scale.y += (1.0 - mascotSprite.scale.y) * 0.2;
+      mascotSprite.position.y = -0.55 + floatOffset;
+      
       // Pointing based on Z location (all UI panels are on the right)
       if (activeSectionIndex >= 1 && activeSectionIndex <= 6) {
         updateMascotPose('point', 1); // point right
@@ -797,6 +858,8 @@ function animate(time) {
       }
     }
   }
+  
+  updateFootprints();
   
   // 4. Update active UI sections based on camera Z depth
   updateUIOverlays(currentCameraZ);

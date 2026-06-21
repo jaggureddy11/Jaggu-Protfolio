@@ -10,6 +10,7 @@ import {
 } from './doodles.js';
 
 import mascotImgUrl from './assets/mascot.png';
+import mascotPointImgUrl from './assets/mascot_point.png';
 
 // --- State Management ---
 let isChalkboard = false;
@@ -367,12 +368,14 @@ function redrawAllDoodles() {
 let mascotSprite;
 let mascotCanvas;
 let mascotTexture;
+let mascotPointTexture;
 let mascotPoseState = 'idle'; // idle, walk, point
 let mascotFacingDir = 1; // 1 = right, -1 = left
 
 function initMascot() {
   const textureLoader = new THREE.TextureLoader();
   mascotTexture = textureLoader.load(mascotImgUrl);
+  mascotPointTexture = textureLoader.load(mascotPointImgUrl);
   
   const material = new THREE.MeshBasicMaterial({
     map: mascotTexture,
@@ -394,12 +397,21 @@ function updateMascotPose(pose, direction = 1) {
     mascotPoseState = pose;
     mascotFacingDir = direction;
     
+    // Switch texture if pointing
+    if (pose === 'point') {
+      mascotSprite.material.map = mascotPointTexture;
+    } else {
+      mascotSprite.material.map = mascotTexture;
+    }
+    
     // Handle flipping of texture on the X axis depending on facing direction
     if (direction === -1) {
       mascotSprite.scale.x = -1; // Flip mesh horizontally
     } else {
       mascotSprite.scale.x = 1;
     }
+    
+    mascotSprite.material.needsUpdate = true;
   }
 }
 

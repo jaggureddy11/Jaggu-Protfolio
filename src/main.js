@@ -439,9 +439,10 @@ function updateMascotPose(pose, direction = 1) {
       mascotSprite.scale.set(1.0 * direction, 1.0, 1.0);
     } else if (pose === 'walk') {
       mascotSprite.material.map = mascotWalkTexture;
-      // Scale walk frames (238x720) to match the visual screen size of the standing boy.
-      // We use a positive X scale (0.44) to ensure the 'Jaggu' text on the bag reads correctly.
-      mascotSprite.scale.set(0.44 * direction, 0.89, 1.0);
+      // The spritesheet frames are 672x720 (aspect ratio ~0.933). 
+      // The geometry is 1.4x2.1 (aspect ratio 0.666).
+      // Scale X by 1.4 to compensate and match the visual size correctly.
+      mascotSprite.scale.set(1.4 * direction, 1.0, 1.0);
     } else {
       mascotSprite.material.map = mascotTexture;
       mascotSprite.scale.set(1.0 * direction, 1.0, 1.0);

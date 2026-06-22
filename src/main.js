@@ -11,7 +11,7 @@ import {
 
 import mascotImgUrl from './assets/mascot.png';
 import mascotPointImgUrl from './assets/mascot_point.png';
-import mascotPassImgUrl from './assets/mascot_pass.png';
+import mascotWalkSheetUrl from './assets/gemini_walk_sheet.png';
 
 // --- State Management ---
 let isChalkboard = false;
@@ -386,7 +386,7 @@ let mascotSprite;
 let mascotCanvas;
 let mascotTexture;
 let mascotPointTexture;
-let mascotPassTexture;
+let mascotWalkTexture;
 let mascotPoseState = 'idle'; // idle, walk, point
 let mascotFacingDir = 1; // 1 = right, -1 = left
 let walkCycleTime = 0;
@@ -395,7 +395,18 @@ function initMascot() {
   const textureLoader = new THREE.TextureLoader();
   mascotTexture = textureLoader.load(mascotImgUrl);
   mascotPointTexture = textureLoader.load(mascotPointImgUrl);
-  mascotPassTexture = textureLoader.load(mascotPassImgUrl);
+  
+  mascotWalkTexture = textureLoader.load(mascotWalkSheetUrl);
+  // Spritesheet configuration: 8 horizontal frames (672x720 each)
+  mascotWalkTexture.wrapS = THREE.RepeatWrapping;
+  mascotWalkTexture.wrapT = THREE.ClampToEdgeWrapping;
+  mascotWalkTexture.repeat.set(0.125, 1.0);
+  mascotWalkTexture.offset.set(0.0, 0.0);
+  
+  // Clean pixel rendering
+  mascotTexture.minFilter = THREE.LinearFilter;
+  mascotPointTexture.minFilter = THREE.LinearFilter;
+  mascotWalkTexture.minFilter = THREE.LinearFilter;
   
   const material = new THREE.MeshBasicMaterial({
     map: mascotTexture,
@@ -403,34 +414,37 @@ function initMascot() {
     side: THREE.DoubleSide
   });
   
-  // Image is 682x1024, so aspect ratio is ~0.666. If width is 1.4, height should be ~2.1
+  // Image is 682x1024, so aspect ratio is ~0.666. If width is 1.4, height should be ~2.1.
+  // Note: the frames in the new walk spritesheet have aspect ratio 238/720 = 0.33.
+  // To match the default standing mesh proportions (width 1.4, height 2.1), we keep scale.y = 1.0.
   const geometry = new THREE.PlaneGeometry(1.4, 2.1);
   mascotSprite = new THREE.Mesh(geometry, material);
   
-  // Position slightly ahead of the camera, to the bottom-left
+  // Position completely locked to camera viewport later
   mascotSprite.position.set(-1.2, -0.4, 0);
   scene.add(mascotSprite);
 }
 
 function updateMascotPose(pose, direction = 1) {
-  if (mascotPoseState !== pose || mascotFacingDir !== direction) {
+  const directionChanged = mascotFacingDir !== direction;
+  const poseChanged = mascotPoseState !== pose;
+  
+  if (poseChanged || directionChanged) {
     mascotPoseState = pose;
     mascotFacingDir = direction;
     
-    // Switch texture depending on pose
+    // Switch texture depending on pose and adjust mesh scales to prevent distortion
     if (pose === 'point') {
       mascotSprite.material.map = mascotPointTexture;
+      mascotSprite.scale.set(1.0 * direction, 1.0, 1.0);
     } else if (pose === 'walk') {
-      mascotSprite.material.map = mascotPassTexture;
+      mascotSprite.material.map = mascotWalkTexture;
+      // Scale walk frames (238x720) to match the visual screen size of the standing boy.
+      // We use a positive X scale (0.44) to ensure the 'Jaggu' text on the bag reads correctly.
+      mascotSprite.scale.set(0.44 * direction, 0.89, 1.0);
     } else {
       mascotSprite.material.map = mascotTexture;
-    }
-    
-    // Handle flipping of texture on the X axis depending on facing direction
-    if (direction === -1) {
-      mascotSprite.scale.x = -1; // Flip mesh horizontally
-    } else {
-      mascotSprite.scale.x = 1;
+      mascotSprite.scale.set(1.0 * direction, 1.0, 1.0);
     }
     
     mascotSprite.material.needsUpdate = true;
@@ -769,21 +783,18 @@ function animate(time) {
     mascotSprite.position.y = camera.position.y - 0.55;
     mascotSprite.position.z = camera.position.z - 4.5;
     
-    // Ensure no walking tilt, bounce, or squash is left on the mascot
-    mascotSprite.rotation.z = 0;
-    mascotSprite.scale.y = 1.0;
-    
     // Choose mascot pose based on movement
     if (scrollSpeed > 0.08) {
-      // Sync walking cycle directly to the mascot's position along the Z axis
-      const walkFrame = Math.floor(Math.abs(currentCameraZ) * 2.0) % 2;
+      updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
       
-      if (walkFrame === 0) {
-        updateMascotPose('idle', deltaZ < 0 ? 1 : -1);
-      } else {
-        updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
-      }
+      // Update spritesheet offset based on absolute camera Z coordinate.
+      // Every 0.3 units of movement progresses to the next walk frame.
+      const walkFrame = Math.floor(Math.abs(currentCameraZ) * 3.3) % 8;
+      mascotWalkTexture.offset.x = walkFrame * 0.125;
     } else {
+      // Return scale.y to 1.0 (default standing height)
+      mascotSprite.scale.y = 1.0;
+      
       // Pointing based on Z location (all UI panels are on the right)
       if (activeSectionIndex >= 1 && activeSectionIndex <= 6) {
         updateMascotPose('point', 1); // point right

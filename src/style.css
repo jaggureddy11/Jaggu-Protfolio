@@ -427,6 +427,11 @@ body, html {
   margin-top: 15px;
 }
 
+#sec-projects {
+  justify-content: center;
+  padding-right: 0;
+}
+
 .project-summary-item {
   border: 2.5px solid var(--ink-color);
   border-radius: 12px 25px 15px 30px / 20px 15px 25px 20px;
@@ -438,6 +443,8 @@ body, html {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  text-align: center;
+  align-items: center;
 }
 
 .project-summary-item:hover {
@@ -450,6 +457,14 @@ body, html {
   font-size: 1.2rem;
   margin-bottom: 6px;
   line-height: 1.3;
+}
+
+.github-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  vertical-align: middle;
+  display: inline-block;
 }
 
 .tech-tag {

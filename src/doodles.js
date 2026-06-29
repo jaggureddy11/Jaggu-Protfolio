@@ -200,77 +200,180 @@ export function drawBookshelfDoodle(canvas, color) {
   ctx.fillText('Python', sx - 25, sy - 40);
 }
 
-// 3. Project 1 Portal (AI Platform)
+// 3. Project 1 Portal — Rocket Launch
 export function drawProject1Doodle(canvas, color) {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
+
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
-  
-  // Sketchy Monitor
-  drawSketchLine(ctx, cx - 80, cy - 60, cx + 80, cy - 60, color, 3);
-  drawSketchLine(ctx, cx - 80, cy + 30, cx + 80, cy + 30, color, 3);
-  drawSketchLine(ctx, cx - 80, cy - 60, cx - 80, cy + 30, color, 3);
-  drawSketchLine(ctx, cx + 80, cy - 60, cx + 80, cy + 30, color, 3);
-  
-  // Stand
-  drawSketchLine(ctx, cx - 20, cy + 30, cx - 35, cy + 70, color, 3);
-  drawSketchLine(ctx, cx + 20, cy + 30, cx + 35, cy + 70, color, 3);
-  drawSketchLine(ctx, cx - 50, cy + 70, cx + 50, cy + 70, color, 3);
-  
-  // Floating brain/AI connection to terminal
-  drawSketchCircle(ctx, cx, cy - 15, 30, 20, color, 1.5);
-  ctx.font = '16px Architects Daughter';
+
+  ctx.strokeStyle = color;
   ctx.fillStyle = color;
-  ctx.fillText('GEN-AI', cx - 26, cy - 10);
-  
-  // Code brackets on screen
-  ctx.font = '28px Architects Daughter';
-  ctx.fillText('{ }', cx - 65, cy + 10);
-  ctx.fillText('</>', cx + 30, cy + 10);
-  
-  // Click text
-  ctx.font = 'bold 18px Caveat';
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // --- Rocket body (hand-drawn polygon) ---
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  // nose
+  ctx.moveTo(cx, cy - 85);
+  // right side going down
+  ctx.bezierCurveTo(cx + 28, cy - 60, cx + 32, cy - 10, cx + 28, cy + 25);
+  // right fin
+  ctx.lineTo(cx + 50, cy + 55);
+  ctx.lineTo(cx + 28, cy + 45);
+  // bottom between fins
+  ctx.lineTo(cx + 18, cy + 55);
+  ctx.lineTo(cx - 18, cy + 55);
+  // left fin
+  ctx.lineTo(cx - 28, cy + 45);
+  ctx.lineTo(cx - 50, cy + 55);
+  ctx.lineTo(cx - 28, cy + 25);
+  // left side going up to nose
+  ctx.bezierCurveTo(cx - 32, cy - 10, cx - 28, cy - 60, cx, cy - 85);
+  ctx.closePath();
+  ctx.stroke();
+
+  // --- Porthole window ---
+  drawSketchCircle(ctx, cx, cy - 20, 16, 16, color, 2.5);
+  drawSketchCircle(ctx, cx + 3, cy - 24, 4, 4, color, 1.2);
+
+  // --- Exhaust flame (3 wavy tongues) ---
+  ctx.lineWidth = 2;
+  // center flame
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + 55);
+  ctx.bezierCurveTo(cx + 6, cy + 72, cx - 8, cy + 85, cx, cy + 100);
+  ctx.stroke();
+  // left flame
+  ctx.beginPath();
+  ctx.moveTo(cx - 12, cy + 55);
+  ctx.bezierCurveTo(cx - 18, cy + 68, cx - 10, cy + 78, cx - 8, cy + 90);
+  ctx.stroke();
+  // right flame
+  ctx.beginPath();
+  ctx.moveTo(cx + 12, cy + 55);
+  ctx.bezierCurveTo(cx + 18, cy + 68, cx + 10, cy + 78, cx + 8, cy + 90);
+  ctx.stroke();
+
+  // --- Stars scattered around ---
+  const stars = [[-60, -75], [62, -68], [-68, 10], [72, 5], [-55, -30], [58, -35]];
+  stars.forEach(([dx, dy]) => {
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(cx + dx, cy + dy - 5);
+    ctx.lineTo(cx + dx, cy + dy + 5);
+    ctx.moveTo(cx + dx - 5, cy + dy);
+    ctx.lineTo(cx + dx + 5, cy + dy);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + dx - 3, cy + dy - 3);
+    ctx.lineTo(cx + dx + 3, cy + dy + 3);
+    ctx.moveTo(cx + dx + 3, cy + dy - 3);
+    ctx.lineTo(cx + dx - 3, cy + dy + 3);
+    ctx.stroke();
+  });
+
+  // --- Label ---
+  ctx.font = 'bold 16px Caveat';
   ctx.fillStyle = color;
-  ctx.fillText('OPEN PORTAL', cx - 40, cy + 95);
+  ctx.textAlign = 'center';
+  ctx.fillText('LAUNCH PROJECTS', cx, cy - 98);
+
+  // --- Click hint ---
+  ctx.font = 'bold 15px Caveat';
+  ctx.fillText('OPEN PORTAL', cx, cy + 115);
+  ctx.textAlign = 'left';
 }
 
-// 4. Project 2 Portal (Vision Assistant)
+// 4. Project 2 Portal — Lightbulb + Circuit
 export function drawProject2Doodle(canvas, color) {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  
+
   const cx = canvas.width / 2;
-  const cy = canvas.height / 2;
-  
-  // Giant Camera Eye structure
-  drawSketchCircle(ctx, cx, cy - 10, 50, 50, color, 3);
-  drawSketchCircle(ctx, cx, cy - 10, 20, 20, color, 2);
-  drawSketchCircle(ctx, cx + 5, cy - 15, 6, 6, color, 1.5); // Pupil highlight
-  
-  // Lens barrel tabs
-  drawSketchLine(ctx, cx - 70, cy - 10, cx + 70, cy - 10, color, 1.5);
-  
-  // Stand structure (Raspberry Pi shape)
-  drawSketchLine(ctx, cx - 40, cy + 40, cx - 40, cy + 75, color, 2.5);
-  drawSketchLine(ctx, cx + 40, cy + 40, cx + 40, cy + 75, color, 2.5);
-  drawSketchLine(ctx, cx - 50, cy + 75, cx + 50, cy + 75, color, 3);
-  
-  // Chipboard micro controller doodles
-  drawSketchLine(ctx, cx - 30, cy + 50, cx - 10, cy + 50, color, 1.5);
-  drawSketchLine(ctx, cx - 30, cy + 60, cx - 10, cy + 60, color, 1.5);
-  
-  // Radar waves radiating from the eye (Accessibility Vision)
-  drawSketchCircle(ctx, cx, cy - 10, 75, 75, color, 1);
-  drawSketchCircle(ctx, cx, cy - 10, 95, 95, color, 0.5);
-  
-  ctx.font = '16px Architects Daughter';
+  const cy = canvas.height / 2 - 5;
+
+  ctx.strokeStyle = color;
   ctx.fillStyle = color;
-  ctx.fillText('VISION', cx - 25, cy - 68);
-  
-  ctx.font = 'bold 18px Caveat';
-  ctx.fillText('OPEN PORTAL', cx - 40, cy + 95);
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+
+  // --- Lightbulb glass dome (big sketchy arc) ---
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(cx, cy - 18, 52, Math.PI * 1.1, Math.PI * 1.9, false); // top dome
+  ctx.stroke();
+  // left side going down
+  ctx.beginPath();
+  ctx.moveTo(cx - 52 * Math.cos(Math.PI * 0.1), cy - 18 + 52 * Math.sin(Math.PI * 0.1));
+  ctx.bezierCurveTo(cx - 38, cy + 34, cx - 28, cy + 42, cx - 22, cy + 52);
+  ctx.lineTo(cx + 22, cy + 52);
+  ctx.bezierCurveTo(cx + 28, cy + 42, cx + 38, cy + 34, cx + 36, cy + 14);
+  ctx.stroke();
+
+  // --- Filament (zig-zag inside) ---
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(cx - 18, cy + 20);
+  ctx.lineTo(cx - 10, cy);
+  ctx.lineTo(cx - 2, cy + 18);
+  ctx.lineTo(cx + 6, cy - 4);
+  ctx.lineTo(cx + 14, cy + 18);
+  ctx.lineTo(cx + 22, cy);
+  ctx.stroke();
+
+  // --- Base / screw threads ---
+  ctx.lineWidth = 2.5;
+  drawSketchLine(ctx, cx - 22, cy + 52, cx + 22, cy + 52, color, 2.5);
+  drawSketchLine(ctx, cx - 20, cy + 62, cx + 20, cy + 62, color, 2);
+  drawSketchLine(ctx, cx - 17, cy + 72, cx + 17, cy + 72, color, 2);
+
+  // --- Radiating glow lines ---
+  const glowAngles = [-90, -60, -120, -30, -150, 0, -180];
+  glowAngles.forEach(deg => {
+    const rad = (deg * Math.PI) / 180;
+    const r1 = 60, r2 = 78;
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(cx + r1 * Math.cos(rad), cy - 18 + r1 * Math.sin(rad));
+    ctx.lineTo(cx + r2 * Math.cos(rad), cy - 18 + r2 * Math.sin(rad));
+    ctx.stroke();
+  });
+
+  // --- Circuit nodes branching out from base ---
+  // left branch
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(cx - 22, cy + 62);
+  ctx.lineTo(cx - 55, cy + 62);
+  ctx.lineTo(cx - 55, cy + 85);
+  ctx.stroke();
+  drawSketchCircle(ctx, cx - 55, cy + 85, 5, 5, color, 1.5);
+  // right branch
+  ctx.beginPath();
+  ctx.moveTo(cx + 22, cy + 62);
+  ctx.lineTo(cx + 55, cy + 62);
+  ctx.lineTo(cx + 55, cy + 85);
+  ctx.stroke();
+  drawSketchCircle(ctx, cx + 55, cy + 85, 5, 5, color, 1.5);
+  // center down
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + 72);
+  ctx.lineTo(cx, cy + 95);
+  ctx.stroke();
+  drawSketchCircle(ctx, cx, cy + 95, 5, 5, color, 1.5);
+
+  // --- Label ---
+  ctx.font = 'bold 16px Caveat';
+  ctx.textAlign = 'center';
+  ctx.fillText('IDEAS & CODE', cx, cy - 83);
+
+  // --- Click hint ---
+  ctx.font = 'bold 15px Caveat';
+  ctx.fillText('OPEN PORTAL', cx, cy + 116);
+  ctx.textAlign = 'left';
 }
 
 // 5. Android Intern / Experience Doodle

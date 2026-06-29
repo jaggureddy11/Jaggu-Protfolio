@@ -481,10 +481,10 @@ function initDoodles() {
   });
 
   // Projects portals (Z = -45)
-  // Project 1 Portal (Left side)
-  createDoodleMesh(drawProject1Doodle, 3.2, 3.2, new THREE.Vector3(-2.8, 0, -45), 'doodle-proj1');
-  // Project 2 Portal (Right side)
-  createDoodleMesh(drawProject2Doodle, 3.2, 3.2, new THREE.Vector3(2.8, 0, -45), 'doodle-proj2');
+  // Project 2 Portal (Left side)
+  createDoodleMesh(drawProject2Doodle, 3.2, 3.2, new THREE.Vector3(-2.8, 0, -45), 'doodle-proj2');
+  // Project 1 Portal (Right side)
+  createDoodleMesh(drawProject1Doodle, 3.2, 3.2, new THREE.Vector3(2.8, 0, -45), 'doodle-proj1');
 
   // Internship / Experience Doodle (Z = -60, Left Wall)
   createDoodleMesh(drawAndroidDoodle, 3.4, 3.4, new THREE.Vector3(-3.0, 0, -60), 'doodle-intern');

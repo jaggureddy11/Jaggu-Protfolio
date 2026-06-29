@@ -69,7 +69,7 @@ export function drawSketchCircle(ctx, cx, cy, rx, ry, color, thickness = 2) {
   }
 }
 
-// 1. Brain / Bio Doodle
+// 1. Open Journal / Bio Doodle
 export function drawBrainDoodle(canvas, color) {
   const ctx = canvas.getContext('2d');
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -77,46 +77,51 @@ export function drawBrainDoodle(canvas, color) {
   const cx = canvas.width / 2;
   const cy = canvas.height / 2;
   
-  // Outer brain wobbly lobes
-  drawSketchCircle(ctx, cx, cy - 10, 80, 70, color, 3);
-  drawSketchCircle(ctx, cx - 40, cy - 20, 50, 45, color, 2);
-  drawSketchCircle(ctx, cx + 40, cy - 20, 50, 45, color, 2);
+  // Left Page wobbly border
+  drawSketchLine(ctx, cx - 80, cy - 50, cx - 5, cy - 53, color, 2);
+  drawSketchLine(ctx, cx - 80, cy + 50, cx - 5, cy + 48, color, 2);
+  drawSketchLine(ctx, cx - 80, cy - 50, cx - 80, cy + 50, color, 2);
+  drawSketchLine(ctx, cx - 5, cy - 53, cx - 5, cy + 48, color, 2);
   
-  // Brainstem / spinal stem
-  drawSketchLine(ctx, cx - 15, cy + 40, cx - 15, cy + 100, color, 2.5);
-  drawSketchLine(ctx, cx + 15, cy + 40, cx + 15, cy + 100, color, 2.5);
-  drawSketchLine(ctx, cx - 15, cy + 100, cx + 15, cy + 100, color, 2.5);
+  // Right Page wobbly border
+  drawSketchLine(ctx, cx + 5, cy - 53, cx + 80, cy - 50, color, 2);
+  drawSketchLine(ctx, cx + 5, cy + 48, cx + 80, cy + 50, color, 2);
+  drawSketchLine(ctx, cx + 5, cy - 53, cx + 5, cy + 48, color, 2);
+  drawSketchLine(ctx, cx + 80, cy - 50, cx + 80, cy + 50, color, 2);
   
-  // Inner brain gear circles
-  drawSketchCircle(ctx, cx - 30, cy + 10, 20, 20, color, 2);
-  drawSketchCircle(ctx, cx + 30, cy + 10, 25, 25, color, 2);
-  
-  // Gear teeth details
-  for(let i=0; i<8; i++) {
-    const angle = (i/8) * Math.PI * 2;
-    drawSketchLine(ctx, cx - 30 + Math.cos(angle)*20, cy + 10 + Math.sin(angle)*20, cx - 30 + Math.cos(angle)*26, cy + 10 + Math.sin(angle)*26, color, 2);
-  }
-  for(let i=0; i<10; i++) {
-    const angle = (i/10) * Math.PI * 2;
-    drawSketchLine(ctx, cx + 30 + Math.cos(angle)*25, cy + 10 + Math.sin(angle)*25, cx + 30 + Math.cos(angle)*32, cy + 10 + Math.sin(angle)*32, color, 2);
+  // Spine binder coils
+  for (let y = cy - 40; y <= cy + 40; y += 20) {
+    drawSketchCircle(ctx, cx, y, 6, 4, color, 1.5);
   }
   
-  // Floating lightbulb
-  const lx = cx;
-  const ly = cy - 40;
-  drawSketchCircle(ctx, lx, ly, 18, 18, color, 2);
-  drawSketchLine(ctx, lx - 10, ly + 15, lx + 10, ly + 15, color, 2);
-  drawSketchLine(ctx, lx - 8, ly + 20, lx + 8, ly + 20, color, 2);
-  // Filament
-  drawSketchLine(ctx, lx - 5, ly + 5, lx - 5, ly - 5, color, 1.5);
-  drawSketchLine(ctx, lx + 5, ly + 5, lx + 5, ly - 5, color, 1.5);
-  drawSketchLine(ctx, lx - 5, ly - 5, lx + 5, ly - 5, color, 1.5);
-  
-  // Spark lines radiating
-  for(let i=0; i<6; i++) {
-    const angle = (i/6) * Math.PI * 2 - Math.PI/2;
-    drawSketchLine(ctx, lx + Math.cos(angle)*26, ly + Math.sin(angle)*26, lx + Math.cos(angle)*38, ly + Math.sin(angle)*38, color, 2);
+  // Content lines on left page
+  for (let y = cy - 35; y <= cy + 35; y += 15) {
+    drawSketchLine(ctx, cx - 70, y, cx - 15, y, color, 1.5);
   }
+  
+  // Content on right page: A sketchy lightbulb representing thoughts/ideas
+  const rx = cx + 42;
+  const ry = cy - 5;
+  drawSketchCircle(ctx, rx, ry - 10, 12, 12, color, 1.5);
+  drawSketchLine(ctx, rx - 6, ry + 2, rx + 6, ry + 2, color, 1.5);
+  drawSketchLine(ctx, rx - 4, ry + 6, rx + 4, ry + 6, color, 1.5);
+  drawSketchLine(ctx, rx, ry - 5, rx, ry - 15, color, 1);
+  
+  for (let i = 0; i < 4; i++) {
+    const angle = (i / 4) * Math.PI - Math.PI / 4;
+    drawSketchLine(ctx, rx + Math.cos(angle) * 15, ry - 10 + Math.sin(angle) * 15, rx + Math.cos(angle) * 22, ry - 10 + Math.sin(angle) * 22, color, 1.5);
+  }
+
+  // Draw a pencil resting diagonally across the bottom of the sketchbook
+  const px1 = cx - 55;
+  const py1 = cy + 40;
+  const px2 = cx + 45;
+  const py2 = cy + 15;
+  drawSketchLine(ctx, px1, py1, px2, py2, color, 2.5);
+  drawSketchCircle(ctx, px1 - 2, py1 + 1, 3, 3, color, 1.5);
+  drawSketchLine(ctx, px2, py2, px2 + 8, py2 - 2, color, 2);
+  drawSketchLine(ctx, px2, py2, px2 + 4, py2 - 8, color, 2);
+  drawSketchLine(ctx, px2 + 8, py2 - 2, px2 + 4, py2 - 8, color, 2);
 }
 
 // 2. Bookshelf / Skills Doodle

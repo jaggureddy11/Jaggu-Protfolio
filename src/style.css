@@ -178,10 +178,6 @@ body, html {
   transform: translateX(-50%);
 }
 
-#sound-toggle {
-  right: 30px;
-  top: 90px;
-}
 
 /* Navigation Ribbon */
 .nav-ribbon {
@@ -774,12 +770,7 @@ body, html {
     right: 20px;
     top: 20px;
   }
-  
-  #sound-toggle {
-    left: 20px;
-    top: 20px;
-    right: auto;
-  }
+
   
   .notebook-rings {
     display: none;

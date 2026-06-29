@@ -138,126 +138,10 @@ const sections = ['cover', 'bio', 'skills', 'projects', 'intern', 'certs', 'conn
 const getInkColor = () => isChalkboard ? '#eaeaea' : '#1a1a1a';
 const getAccentColor = () => isChalkboard ? '#f4d068' : '#2b5c8f';
 
-// --- Web Audio API Synthesizer ---
-function initAudio() {
-  if (audioCtx) return;
-  audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  
-  // Create continuous white noise for pencil scratch
-  const bufferSize = audioCtx.sampleRate * 2;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = Math.random() * 2 - 1;
-  }
-  
-  const noise = audioCtx.createBufferSource();
-  noise.buffer = buffer;
-  noise.loop = true;
-  
-  // Bandpass filter to model pencil scratch frequency response
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.value = 1200;
-  filter.Q.value = 4.0;
-  
-  scrollGainNode = audioCtx.createGain();
-  scrollGainNode.gain.value = 0;
-  
-  noise.connect(filter);
-  filter.connect(scrollGainNode);
-  scrollGainNode.connect(audioCtx.destination);
-  
-  noise.start();
-}
-
-function playClickSound() {
-  if (!soundEnabled || !audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + 0.08);
-  
-  gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
-  
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.08);
-}
-
-function playScribbleSound() {
-  if (!soundEnabled || !audioCtx) return;
-  const osc = audioCtx.createOscillator();
-  const gain = audioCtx.createGain();
-  osc.type = 'sine';
-  
-  osc.frequency.setValueAtTime(700, audioCtx.currentTime);
-  osc.frequency.linearRampToValueAtTime(1100, audioCtx.currentTime + 0.06);
-  osc.frequency.linearRampToValueAtTime(500, audioCtx.currentTime + 0.12);
-  osc.frequency.linearRampToValueAtTime(800, audioCtx.currentTime + 0.18);
-  
-  gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
-  gain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.06);
-  gain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 0.12);
-  gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.22);
-  
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.22);
-}
-
-function playPageFlipSound() {
-  if (!soundEnabled || !audioCtx) return;
-  
-  // 1. Rustle (highpass-filtered white noise)
-  const bufferSize = audioCtx.sampleRate * 0.45;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = Math.random() * 2 - 1;
-  }
-  
-  const noiseSource = audioCtx.createBufferSource();
-  noiseSource.buffer = buffer;
-  
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.setValueAtTime(350, audioCtx.currentTime);
-  filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
-  filter.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.45);
-  filter.Q.setValueAtTime(4.0, audioCtx.currentTime);
-  
-  const noiseGain = audioCtx.createGain();
-  noiseGain.gain.setValueAtTime(0, audioCtx.currentTime);
-  noiseGain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.05);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
-  
-  noiseSource.connect(filter);
-  filter.connect(noiseGain);
-  noiseGain.connect(audioCtx.destination);
-  
-  // 2. Low-frequency thud (sine sweep)
-  const osc = audioCtx.createOscillator();
-  const oscGain = audioCtx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(80, audioCtx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.35);
-  
-  oscGain.gain.setValueAtTime(0.06, audioCtx.currentTime);
-  oscGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
-  
-  osc.connect(oscGain);
-  oscGain.connect(audioCtx.destination);
-  
-  noiseSource.start();
-  noiseSource.stop(audioCtx.currentTime + 0.45);
-  osc.start();
-  osc.stop(audioCtx.currentTime + 0.35);
-}
+function initAudio() {}
+function playClickSound() {}
+function playScribbleSound() {}
+function playPageFlipSound() {}
 
 // --- Three.js Setup ---
 const canvas = document.getElementById('webgl-canvas');
@@ -863,21 +747,7 @@ themeToggle.addEventListener('click', () => {
   redrawAllDoodles();
 });
 
-// --- Sound Toggle Control ---
-const soundToggle = document.getElementById('sound-toggle');
-soundToggle.addEventListener('click', () => {
-  soundEnabled = !soundEnabled;
-  
-  if (soundEnabled) {
-    initAudio();
-    soundToggle.querySelector('.sound-icon').textContent = '🔊';
-    soundToggle.querySelector('.sound-text').textContent = 'Scribbles On';
-    playClickSound();
-  } else {
-    soundToggle.querySelector('.sound-icon').textContent = '🔈';
-    soundToggle.querySelector('.sound-text').textContent = 'Scribbles Off';
-  }
-});
+
 
 // --- Window Resize Handling ---
 window.addEventListener('resize', () => {

@@ -9,6 +9,119 @@ import {
   drawMailboxDoodle
 } from './doodles.js';
 
+// --- Project Database ---
+const projectsData = {
+  1: {
+    title: "ShopHere",
+    tagline: "React | Next.js | Tailwind CSS | Node.js | MongoDB",
+    description: "A production-grade, highly responsive, and full-featured e-commerce platform designed for modern online retail experiences.",
+    highlights: [
+      "Stitch Integration: Offers a seamless UI for browsing products, managing carts, and processing secure checkouts.",
+      "Optimized UX: Built using Next.js and Tailwind CSS with server-side rendering (SSR) for lightning-fast page loading and high SEO scores.",
+      "Fully Featured Admin: Features rich dashboard metrics, inventory controls, order tracking, and custom promotion management."
+    ],
+    github: "https://github.com/jaggureddy11/ShopHere"
+  },
+  2: {
+    title: "Claude Token Counter",
+    tagline: "Chrome Extension | userscript | o200k_base tokenizer | SSE Interception",
+    description: "A sleek, lightweight, and local-first browser extension that displays real-time Claude.ai token counts, context gauges, and prompt cache timers.",
+    highlights: [
+      "Real-time Counting: Uses local o200k_base tokenizer to instantly estimate prompt token sizes offline.",
+      "Live Expiration Timer: Captures Anthropic's 5-minute prompt cache window, prompting messages before expiration to save up to 90% in costs.",
+      "Quota & Analytics Tracker: Intercepts server-sent event streams to monitor rolling session limits and quotas."
+    ],
+    github: "https://github.com/jaggureddy11/CLAUDE-TOKEN-COUNTER-OG"
+  },
+  3: {
+    title: "StayOnTrack",
+    tagline: "Chrome/Firefox Extension | Vanilla JS | HTML5 | CSS3",
+    description: "A high-performance productivity companion designed to break digital fatigue, prevent mindless browsing, and shield you from distractions.",
+    highlights: [
+      "Distraction Blocker: Intelligently redirects target websites and prompts mindfulness tasks to keep you focused.",
+      "100% Local Privacy: Processes all data directly inside your browser sandbox without any external tracking or servers.",
+      "Eye-Care Safeguards: Incorporates screen fatigue breaks and customizable focus-interval configurations."
+    ],
+    github: "https://github.com/jaggureddy11/StayOnTrack"
+  },
+  4: {
+    title: "CapMap (AI Capability Discovery)",
+    tagline: "Next.js | React | TypeScript | Node.js | Gemini API",
+    description: "A state-of-the-art, secure, and stateless developer tool that inspects AI API keys and maps their underlying models and rate-limit capabilities.",
+    highlights: [
+      "Stateless Security: Performs verification of keys entirely in memory without ever storing or logging secret tokens.",
+      "Comprehensive Capability Map: Validates model support, fine-tuning features, embedding endpoints, and vector search parameters.",
+      "Sleek Developer Dashboard: Provides clean JSON exports, rate-limit visualizers, and raw request test logs."
+    ],
+    github: "https://github.com/jaggureddy11/API-CAPABILITY-DISCOVERY"
+  },
+  5: {
+    title: "Enterprise Workflow Orchestration",
+    tagline: "Node.js | TypeScript | Microservices | Docker | Kafka",
+    description: "A multi-tenant, distributed workflow orchestration platform combining visual flow building, task queues, and automated IT processes.",
+    highlights: [
+      "Visual Flow Engine: Supports building complex nested logic, automated retry triggers, and custom script runtimes.",
+      "High Reliability: Leverages a distributed task architecture with Redis queues and Kafka message brokers to handle millions of jobs.",
+      "Advanced Multi-Tenancy: Incorporates strict resource sandboxing, granular RBAC permissions, and comprehensive audit logging."
+    ],
+    github: "https://github.com/jaggureddy11/Enterprise-Workflow-Orchestration-Platform"
+  },
+  6: {
+    title: "Network Speed Tester",
+    tagline: "JavaScript | WebSockets | HTTP Chunk Streaming | Chart.js",
+    description: "A lightweight, browser-based network utility that measures precise download, upload, ping latency, and jitter in real-time.",
+    highlights: [
+      "WS & HTTP Chunk Streaming: Measures transfer speeds accurately without relying on local speed-test packages.",
+      "Interactive Telemetry: Visualizes throughput variations, connection stability, and bufferbloat using real-time Canvas charts.",
+      "Highly Optimized: Implements zero-dependency network probes to minimize client-side overhead."
+    ],
+    github: "https://github.com/jaggureddy11/Network-speed-tester"
+  },
+  7: {
+    title: "Intelligent Ticket Routing Agent",
+    tagline: "FastAPI | Python | Hugging Face NLP | SQLite",
+    description: "An AI-powered IT support desk agent that classifies and routes incoming support tickets using zero-shot NLP models.",
+    highlights: [
+      "Automated Routing: Analyzes ticket text semantic context to assign issues to support categories with 90%+ accuracy.",
+      "Self-Learning Pipeline: Periodically saves ticket histories in SQLite to refine classification bounds dynamically.",
+      "Ultra-Fast API: Implements an asynchronous FastAPI microservice with average processing times under 50ms."
+    ],
+    github: "https://github.com/jaggureddy11/Intelligent-Ticket-Routing-Agent"
+  },
+  8: {
+    title: "MeasureCraft",
+    tagline: "HTML5 Canvas | Vanilla JS | Math.js | CSS3",
+    description: "A specialized screen-measurement tool that enables UI designers and developers to measure pixels, angles, and grids in real-time.",
+    highlights: [
+      "Dynamic Canvas Overlay: Detects element boundaries and measures relative pixel distances dynamically.",
+      "Precision Metrics: Computes exact angles, polar coordinates, and grid layouts for layout inspection.",
+      "Developer Presets: Supports quick exports of CSS margins, paddings, and flex alignments directly."
+    ],
+    github: "https://github.com/jaggureddy11/MeasureCraft"
+  },
+  9: {
+    title: "Gesture AR",
+    tagline: "Vanilla JS | WebXR | Three.js | MediaPipe Handpose",
+    description: "A high-performance spatial computing platform that turns your environment into an AR canvas using hand gestures and a standard webcam.",
+    highlights: [
+      "Webcam Hand Tracking: Uses MediaPipe Handpose to extract 21 3D hand coordinates without specialized AR hardware.",
+      "WebXR Spatial Painting: Allows users to draw, scale, and manipulate 3D wobbly ink meshes directly in their room.",
+      "Highly Optimized: Achieves consistent 60 FPS renders by utilizing low-overhead shaders and custom buffer geometries."
+    ],
+    github: "https://github.com/jaggureddy11/gestureAR"
+  },
+  10: {
+    title: "BrandBooth",
+    tagline: "React | Vite | WebRTC | Tailwind CSS | Canvas API",
+    description: "An interactive photo booth web app designed for brand campaigns and event photo experiences.",
+    highlights: [
+      "WebRTC Camera Integration: Features real-time camera captures with live-preview filters, overlays, and custom borders.",
+      "Instant Brand Overlays: Automatically embeds logos, wobbly doodle frames, and custom watermarks onto photos.",
+      "Fast Exports: Compiles the final high-resolution images instantly using the HTML5 Canvas API for easy sharing."
+    ],
+    github: "https://github.com/jaggureddy11/Store-Booth"
+  }
+};
 
 // --- State Management ---
 let isChalkboard = false;
@@ -560,18 +673,33 @@ function highlightSkillByName(targetId) {
 
 // Modal handling
 function openProjectModal(id) {
-  const modalOverlay = document.getElementById('project-modals');
-  const modal1 = document.getElementById('modal-proj-1');
-  const modal2 = document.getElementById('modal-proj-2');
+  const project = projectsData[id];
+  if (!project) return;
   
+  document.getElementById('modal-title').textContent = project.title;
+  document.getElementById('modal-tagline').textContent = project.tagline;
+  document.getElementById('modal-desc').textContent = project.description;
+  
+  const highlightsList = document.getElementById('modal-highlights');
+  highlightsList.innerHTML = '';
+  project.highlights.forEach(point => {
+    const li = document.createElement('li');
+    if (point.includes(':')) {
+      const parts = point.split(':');
+      const strong = document.createElement('strong');
+      strong.textContent = parts[0] + ':';
+      li.appendChild(strong);
+      li.appendChild(document.createTextNode(parts.slice(1).join(':')));
+    } else {
+      li.textContent = point;
+    }
+    highlightsList.appendChild(li);
+  });
+  
+  document.getElementById('modal-link').href = project.github;
+  
+  const modalOverlay = document.getElementById('project-modal');
   modalOverlay.classList.add('visible');
-  if (id === 1) {
-    modal1.style.display = 'block';
-    modal2.style.display = 'none';
-  } else {
-    modal1.style.display = 'none';
-    modal2.style.display = 'block';
-  }
 }
 
 document.querySelectorAll('.close-modal-btn, .modal-overlay').forEach(element => {
@@ -579,7 +707,7 @@ document.querySelectorAll('.close-modal-btn, .modal-overlay').forEach(element =>
     // Only close if clicked close button or overlay backdrop itself
     if (e.target.classList.contains('close-modal-btn') || e.target.classList.contains('modal-overlay')) {
       playClickSound();
-      document.getElementById('project-modals').classList.remove('visible');
+      document.getElementById('project-modal').classList.remove('visible');
     }
   });
 });

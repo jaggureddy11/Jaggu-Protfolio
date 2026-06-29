@@ -154,12 +154,44 @@
             <p class="instruction-text">Click the 3D portals to open project sketchbooks!</p>
             <div class="projects-list">
               <div class="project-summary-item" data-proj="1">
-                <h3>1. AI Knowledge & Learning Platform</h3>
-                <p class="tech-tag">MERN | AWS | Docker | Gemini</p>
+                <h3>1. ShopHere</h3>
+                <p class="tech-tag">Next.js | React | Tailwind</p>
               </div>
               <div class="project-summary-item" data-proj="2">
-                <h3>2. Real-Time Vision Assistant</h3>
-                <p class="tech-tag">Python | RAG | OpenCV | Raspberry Pi</p>
+                <h3>2. Claude Token Counter</h3>
+                <p class="tech-tag">Chrome Extension | userscript</p>
+              </div>
+              <div class="project-summary-item" data-proj="3">
+                <h3>3. StayOnTrack</h3>
+                <p class="tech-tag">Firefox Ext | Vanilla JS</p>
+              </div>
+              <div class="project-summary-item" data-proj="4">
+                <h3>4. CapMap (AI key discover)</h3>
+                <p class="tech-tag">Next.js | React | TypeScript</p>
+              </div>
+              <div class="project-summary-item" data-proj="5">
+                <h3>5. Enterprise Workflow</h3>
+                <p class="tech-tag">Node | TypeScript | Kafka</p>
+              </div>
+              <div class="project-summary-item" data-proj="6">
+                <h3>6. Network Speed Tester</h3>
+                <p class="tech-tag">JavaScript | WebSockets | Canvas</p>
+              </div>
+              <div class="project-summary-item" data-proj="7">
+                <h3>7. IT Ticket Router</h3>
+                <p class="tech-tag">FastAPI | Hugging Face | NLP</p>
+              </div>
+              <div class="project-summary-item" data-proj="8">
+                <h3>8. MeasureCraft</h3>
+                <p class="tech-tag">HTML5 Canvas | Vanilla JS</p>
+              </div>
+              <div class="project-summary-item" data-proj="9">
+                <h3>9. Gesture AR</h3>
+                <p class="tech-tag">WebXR | Three.js | MediaPipe</p>
+              </div>
+              <div class="project-summary-item" data-proj="10">
+                <h3>10. BrandBooth</h3>
+                <p class="tech-tag">React | WebRTC | Canvas API</p>
               </div>
             </div>
           </div>
@@ -251,40 +283,18 @@
       </div>
 
       <!-- Popups for Project Details -->
-      <div id="project-modals" class="modal-overlay">
-        <!-- Project 1 Modal -->
-        <div id="modal-proj-1" class="sketch-modal">
+      <div id="project-modal" class="modal-overlay">
+        <div class="sketch-modal">
           <button class="close-modal-btn">✖</button>
-          <h2>AI-Powered Knowledge & Learning Platform</h2>
-          <p class="modal-tagline">MERN Stack, AWS, Docker | 2025</p>
+          <h2 id="modal-title">Project Title</h2>
+          <p id="modal-tagline" class="modal-tagline">Tech Stack</p>
           <div class="modal-body">
-            <p>An enterprise-grade full-stack MERN platform designed for developer knowledge sharing and learning automation.</p>
-            <ul>
-              <li><strong>AI Integrations:</strong> Features a built-in AI code editor, interactive AI chatbot, and automated GitHub & YouTube API content curation.</li>
-              <li><strong>Secure Vaults:</strong> Secure resource library, cloud-synced notepad, and a private code snippet vault secured with JWT and Role-Based Access Control (RBAC).</li>
-              <li><strong>DevOps Stack:</strong> Containerized using Docker and deployed on AWS EC2, backed by MongoDB Atlas cloud database.</li>
-              <li><strong>QA standard:</strong> Layered REST APIs with 80%+ unit test coverage using Jest and Supertest, complete with GitHub Actions CI/CD pipelines.</li>
+            <p id="modal-desc">Project description goes here...</p>
+            <ul id="modal-highlights">
+              <!-- Dynamically populated points -->
             </ul>
             <div class="modal-footer">
-              <a href="https://github.com/jaggureddy11" target="_blank" class="modal-btn">GitHub Source</a>
-            </div>
-          </div>
-        </div>
-
-        <!-- Project 2 Modal -->
-        <div id="modal-proj-2" class="sketch-modal">
-          <button class="close-modal-btn">✖</button>
-          <h2>Real-Time Vision Assistant for Accessibility</h2>
-          <p class="modal-tagline">Python, RAG, OpenCV, LangChain, ChromaDB | 2024</p>
-          <div class="modal-body">
-            <p>An AI-powered assistive system built on edge hardware (Raspberry Pi) that helps visually impaired users navigate their environments.</p>
-            <ul>
-              <li><strong>Computer Vision:</strong> Uses Raspberry Pi camera modules and OpenCV to execute real-time object detection and Optical Character Recognition (OCR) for surrounding narration.</li>
-              <li><strong>RAG QA Pipeline:</strong> Semantic search database built using LangChain, vector embeddings, and ChromaDB to support contextual voice-based question answering.</li>
-              <li><strong>System Performance:</strong> Optimized inference speed and lowered edge latency by 20% while maintaining a 92% object detection accuracy.</li>
-            </ul>
-            <div class="modal-footer">
-              <a href="https://github.com/jaggureddy11" target="_blank" class="modal-btn">GitHub Source</a>
+              <a id="modal-link" href="#" target="_blank" class="modal-btn">GitHub Source</a>
             </div>
           </div>
         </div>

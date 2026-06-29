@@ -120,6 +120,28 @@ const projectsData = {
       "Fast Exports: Compiles the final high-resolution images instantly using the HTML5 Canvas API for easy sharing."
     ],
     github: "https://github.com/jaggureddy11/Store-Booth"
+  },
+  11: {
+    title: "Code Vault",
+    tagline: "React | Node.js | Express | MongoDB | JWT | Cryptography",
+    description: "A secure, developer-focused code sharing repository and encrypted snippet store.",
+    highlights: [
+      "Syntax Highlighting: Built-in code editor supports syntax highlights for 15+ major programming languages.",
+      "Encrypted Storage: Utilizes secure cryptographic algorithms to protect private codes and keys before saving.",
+      "One-click Sharing: Quick clip share links with token expiration controls to prevent public exposure."
+    ],
+    github: "https://github.com/jaggureddy11/Code-Vault"
+  },
+  12: {
+    title: "EchoVision",
+    tagline: "Python | OpenCV | TensorFlow | WebRTC | Spatial Audio",
+    description: "An AI-powered computer vision and ambient environmental mapping platform that translates visual obstacles to sound.",
+    highlights: [
+      "Real-time Spatial Tracking: Tracks ambient environment hazards and outlines structural bounds using OpenCV.",
+      "Object Inference: Integrates custom TensorFlow Lite models to identify common household objects instantly.",
+      "Auditory Cues: Synthesizes low-latency spatialized auditory signals to warn users of approaching obstacles."
+    ],
+    github: "https://github.com/jaggureddy11/EchoVision"
   }
 };
 

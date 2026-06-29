@@ -110,6 +110,14 @@ body, html {
   position: relative;
   box-shadow: 2px 2px 3px rgba(0, 0, 0, 0.15);
   transform: rotate(-10deg);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.2s;
+}
+
+.ring:hover {
+  transform: rotate(15deg) scale(1.15) !important;
+  border-color: var(--ink-accent);
 }
 
 .chalkboard-mode .ring {
@@ -190,26 +198,46 @@ body, html {
 }
 
 .nav-ribbon ul li {
+  position: relative;
   cursor: pointer;
+  padding-bottom: 6px;
 }
 
 .nav-ribbon ul li span {
   display: block;
   padding: 6px 12px;
-  border: 2px solid transparent;
   font-family: var(--font-cursive);
   font-size: 1.4rem;
   font-weight: bold;
   color: var(--ink-color);
-  transition: border-color 0.2s, transform 0.2s;
-  border-radius: 50% 10% 40% 10% / 10% 40% 10% 50%;
+  transition: color 0.25s, transform 0.25s;
+}
+
+.nav-underline {
+  position: absolute;
+  bottom: -4px;
+  left: 5%;
+  width: 90%;
+  height: 8px;
+  stroke: var(--ink-accent);
+  stroke-width: 3.5px;
+  fill: none;
+  stroke-linecap: round;
+  pointer-events: none;
+  stroke-dasharray: 120;
+  stroke-dashoffset: 120;
+  transition: stroke-dashoffset 0.3s ease-in-out;
 }
 
 .nav-ribbon ul li.active span,
 .nav-ribbon ul li:hover span {
-  border-color: var(--ink-accent);
-  transform: scale(1.1) rotate(-2deg);
+  transform: scale(1.1) rotate(-1.5deg);
   color: var(--ink-accent);
+}
+
+.nav-ribbon ul li.active .nav-underline,
+.nav-ribbon ul li:hover .nav-underline {
+  stroke-dashoffset: 0;
 }
 
 /* 2D Overlay UI Panels Container */

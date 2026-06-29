@@ -210,6 +210,55 @@ function playScribbleSound() {
   osc.stop(audioCtx.currentTime + 0.22);
 }
 
+function playPageFlipSound() {
+  if (!soundEnabled || !audioCtx) return;
+  
+  // 1. Rustle (highpass-filtered white noise)
+  const bufferSize = audioCtx.sampleRate * 0.45;
+  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = Math.random() * 2 - 1;
+  }
+  
+  const noiseSource = audioCtx.createBufferSource();
+  noiseSource.buffer = buffer;
+  
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.frequency.setValueAtTime(350, audioCtx.currentTime);
+  filter.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
+  filter.frequency.linearRampToValueAtTime(200, audioCtx.currentTime + 0.45);
+  filter.Q.setValueAtTime(4.0, audioCtx.currentTime);
+  
+  const noiseGain = audioCtx.createGain();
+  noiseGain.gain.setValueAtTime(0, audioCtx.currentTime);
+  noiseGain.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 0.05);
+  noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.45);
+  
+  noiseSource.connect(filter);
+  filter.connect(noiseGain);
+  noiseGain.connect(audioCtx.destination);
+  
+  // 2. Low-frequency thud (sine sweep)
+  const osc = audioCtx.createOscillator();
+  const oscGain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(80, audioCtx.currentTime);
+  osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.35);
+  
+  oscGain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+  oscGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.35);
+  
+  osc.connect(oscGain);
+  oscGain.connect(audioCtx.destination);
+  
+  noiseSource.start();
+  noiseSource.stop(audioCtx.currentTime + 0.45);
+  osc.start();
+  osc.stop(audioCtx.currentTime + 0.35);
+}
+
 // --- Three.js Setup ---
 const canvas = document.getElementById('webgl-canvas');
 const scene = new THREE.Scene();
@@ -233,6 +282,65 @@ scene.add(ambientLight);
 const pointLight = new THREE.PointLight(0xffffff, 0.5, 30);
 pointLight.position.set(0, 2, -10);
 scene.add(pointLight);
+
+// --- Chalk Dust Particle System in Dark Mode ---
+let chalkDustParticles = null;
+
+function initChalkDust() {
+  if (chalkDustParticles) {
+    scene.remove(chalkDustParticles);
+  }
+  
+  const particleCount = 250;
+  const geometry = new THREE.BufferGeometry();
+  const positions = new Float32Array(particleCount * 3);
+  const velocities = [];
+  
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 10;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 8;
+    positions[i * 3 + 2] = -Math.random() * 115 + 5;
+    
+    velocities.push({
+      x: (Math.random() - 0.5) * 0.015,
+      y: (Math.random() - 0.5) * 0.015,
+      z: (Math.random() - 0.5) * 0.015 + 0.008
+    });
+  }
+  
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  
+  const canvas = document.createElement('canvas');
+  canvas.width = 16;
+  canvas.height = 16;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+  grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+  grad.addColorStop(0.5, 'rgba(255, 255, 255, 0.4)');
+  grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 16, 16);
+  const texture = new THREE.CanvasTexture(canvas);
+
+  const material = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.15,
+    map: texture,
+    transparent: true,
+    opacity: 0.5,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false
+  });
+  
+  chalkDustParticles = new THREE.Points(geometry, material);
+  chalkDustParticles.userData = { velocities };
+  
+  if (isChalkboard) {
+    scene.add(chalkDustParticles);
+  }
+}
+
+initChalkDust();
 
 // --- Corridor Procedural Line Generator ---
 let corridorLines = [];
@@ -534,7 +642,7 @@ document.querySelectorAll('.nav-ribbon ul li').forEach(item => {
     const scrollTargetPercent = (5 - targetCamZ) / 110;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
     
-    playClickSound();
+    playPageFlipSound();
     
     window.scrollTo({
       top: scrollTargetPercent * docHeight,
@@ -676,6 +784,8 @@ function openProjectModal(id) {
   const project = projectsData[id];
   if (!project) return;
   
+  playPageFlipSound();
+  
   document.getElementById('modal-title').textContent = project.title;
   document.getElementById('modal-tagline').textContent = project.tagline;
   document.getElementById('modal-desc').textContent = project.description;
@@ -706,7 +816,7 @@ document.querySelectorAll('.close-modal-btn, .modal-overlay').forEach(element =>
   element.addEventListener('click', (e) => {
     // Only close if clicked close button or overlay backdrop itself
     if (e.target.classList.contains('close-modal-btn') || e.target.classList.contains('modal-overlay')) {
-      playClickSound();
+      playPageFlipSound();
       document.getElementById('project-modal').classList.remove('visible');
     }
   });
@@ -731,6 +841,9 @@ themeToggle.addEventListener('click', () => {
     setTimeout(() => {
       document.getElementById('theme-toggle').style.transform = 'translateY(0)';
     }, 200);
+    
+    // Show chalk dust particles in scene
+    if (chalkDustParticles) scene.add(chalkDustParticles);
   } else {
     document.documentElement.classList.remove('chalkboard-mode');
     document.body.classList.remove('chalkboard-mode');
@@ -740,6 +853,9 @@ themeToggle.addEventListener('click', () => {
     setTimeout(() => {
       document.getElementById('theme-toggle').style.transform = 'translateY(0)';
     }, 200);
+    
+    // Hide chalk dust particles in scene
+    if (chalkDustParticles) scene.remove(chalkDustParticles);
   }
   
   // Re-draw WebGL lines and textures
@@ -771,6 +887,31 @@ window.addEventListener('resize', () => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 });
 
+function updateChalkDust(time) {
+  if (!chalkDustParticles || !isChalkboard) return;
+  
+  const positions = chalkDustParticles.geometry.attributes.position.array;
+  const velocities = chalkDustParticles.userData.velocities;
+  const particleCount = velocities.length;
+  
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] += velocities[i].x + Math.sin(time * 0.001 + i) * 0.001;
+    positions[i * 3 + 1] += velocities[i].y + Math.cos(time * 0.002 + i) * 0.001;
+    positions[i * 3 + 2] += velocities[i].z;
+    
+    if (positions[i * 3] < -5 || positions[i * 3] > 5) velocities[i].x *= -1;
+    if (positions[i * 3 + 1] < -4 || positions[i * 3 + 1] > 4) velocities[i].y *= -1;
+    
+    if (positions[i * 3 + 2] > 5) {
+      positions[i * 3 + 2] = -110;
+    } else if (positions[i * 3 + 2] < -110) {
+      positions[i * 3 + 2] = 5;
+    }
+  }
+  
+  chalkDustParticles.geometry.attributes.position.needsUpdate = true;
+}
+
 // --- Animation Loop ---
 let lastTime = 0;
 
@@ -779,24 +920,30 @@ function animate(time) {
   
   // 1. Smoothly interpolate camera Z
   const deltaZ = targetCameraZ - currentCameraZ;
-  currentCameraZ += deltaZ * 0.07; // Lerp factor
+  currentCameraZ += deltaZ * 0.07;
   camera.position.z = currentCameraZ;
   
   // 2. Head Bobbing effect proportional to scroll speed (smoothed & capped to prevent excessive shaking)
   const scrollSpeed = Math.abs(deltaZ);
-  const actualVelocity = scrollSpeed * 0.07; // Actual camera movement speed in this frame
-  const bobFactor = Math.min(0.2, actualVelocity * 0.4); // Limit the maximum bobbing amplitude
+  const actualVelocity = scrollSpeed * 0.07;
+  const bobFactor = Math.min(0.2, actualVelocity * 0.4);
   
   if (bobFactor > 0.001) {
     camera.position.y = Math.sin(time * 0.010) * bobFactor * 0.05;
     camera.position.x = Math.cos(time * 0.005) * bobFactor * 0.03;
   } else {
-    // Return gently to center
     camera.position.y += (0 - camera.position.y) * 0.1;
     camera.position.x += (0 - camera.position.x) * 0.1;
   }
   
-
+  // 3. Wiggle notebook rings proportional to scroll velocity
+  const rings = document.querySelectorAll('.ring');
+  if (rings.length > 0) {
+    rings.forEach((ring, index) => {
+      const offsetWiggle = Math.sin(time * 0.006 + index * 0.4) * Math.min(6, scrollSpeed * 3.5);
+      ring.style.transform = `rotate(${-10 + offsetWiggle}deg)`;
+    });
+  }
   
   // 4. Update active UI sections based on camera Z depth
   updateUIOverlays(currentCameraZ);
@@ -808,12 +955,14 @@ function animate(time) {
       const currentAngle = float.angleOffset + time * float.speed;
       mesh.position.x = float.centerX + Math.cos(currentAngle) * float.radiusX;
       mesh.position.y = float.centerY + Math.sin(currentAngle) * float.radiusY;
-      mesh.position.z = float.centerZ + Math.cos(currentAngle * 2) * float.radiusZ; // 3D depth wave
+      mesh.position.z = float.centerZ + Math.cos(currentAngle * 2) * float.radiusZ;
       
-      // Keep subtle rotation on the z-axis for a floating effect
       mesh.rotation.z = Math.sin(time * 0.0015 + float.phaseX) * 0.08;
     }
   });
+  
+  // 6. Update Chalk Dust drifting
+  updateChalkDust(time);
   
   renderer.render(scene, camera);
 }

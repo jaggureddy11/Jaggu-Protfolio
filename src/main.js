@@ -9,9 +9,6 @@ import {
   drawMailboxDoodle
 } from './doodles.js';
 
-import mascotImgUrl from './assets/mascot.png';
-import mascotPointImgUrl from './assets/mascot_point.png';
-import mascotWalkSheetUrl from './assets/gemini_walk_sheet.png';
 
 // --- State Management ---
 let isChalkboard = false;
@@ -381,78 +378,6 @@ function redrawAllDoodles() {
   });
 }
 
-// --- Guide Mascot (Doodle-Bot) ---
-let mascotSprite;
-let mascotCanvas;
-let mascotTexture;
-let mascotPointTexture;
-let mascotWalkTexture;
-let mascotPoseState = 'idle'; // idle, walk, point
-let mascotFacingDir = 1; // 1 = right, -1 = left
-let walkCycleTime = 0;
-
-function initMascot() {
-  const textureLoader = new THREE.TextureLoader();
-  mascotTexture = textureLoader.load(mascotImgUrl);
-  mascotPointTexture = textureLoader.load(mascotPointImgUrl);
-  
-  mascotWalkTexture = textureLoader.load(mascotWalkSheetUrl);
-  // Spritesheet configuration: 8 horizontal frames (672x720 each)
-  mascotWalkTexture.wrapS = THREE.RepeatWrapping;
-  mascotWalkTexture.wrapT = THREE.ClampToEdgeWrapping;
-  mascotWalkTexture.repeat.set(0.125, 1.0);
-  mascotWalkTexture.offset.set(0.0, 0.0);
-  
-  // Clean pixel rendering
-  mascotTexture.minFilter = THREE.LinearFilter;
-  mascotPointTexture.minFilter = THREE.LinearFilter;
-  mascotWalkTexture.minFilter = THREE.LinearFilter;
-  
-  const material = new THREE.MeshBasicMaterial({
-    map: mascotTexture,
-    transparent: true,
-    side: THREE.DoubleSide
-  });
-  
-  // Image is 682x1024, so aspect ratio is ~0.666. If width is 1.4, height should be ~2.1.
-  // Note: the frames in the new walk spritesheet have aspect ratio 238/720 = 0.33.
-  // To match the default standing mesh proportions (width 1.4, height 2.1), we keep scale.y = 1.0.
-  const geometry = new THREE.PlaneGeometry(1.4, 2.1);
-  mascotSprite = new THREE.Mesh(geometry, material);
-  
-  // Position completely locked to camera viewport later
-  mascotSprite.position.set(-1.2, -0.4, 0);
-  scene.add(mascotSprite);
-}
-
-function updateMascotPose(pose, direction = 1) {
-  const directionChanged = mascotFacingDir !== direction;
-  const poseChanged = mascotPoseState !== pose;
-  
-  if (poseChanged || directionChanged) {
-    mascotPoseState = pose;
-    mascotFacingDir = direction;
-    
-    // Switch texture depending on pose and adjust mesh scales to prevent distortion
-    if (pose === 'point') {
-      mascotSprite.material.map = mascotPointTexture;
-      mascotSprite.scale.set(1.0 * direction, 1.0, 1.0);
-    } else if (pose === 'walk') {
-      mascotSprite.material.map = mascotWalkTexture;
-      // The spritesheet frames are 672x720 (aspect ratio ~0.933). 
-      // The geometry is 1.4x2.1 (aspect ratio 0.666).
-      // Scale X by 1.4 to compensate and match the visual size correctly.
-      mascotSprite.scale.set(1.4 * direction, 1.0, 1.0);
-    } else {
-      mascotSprite.material.map = mascotTexture;
-      mascotSprite.scale.set(1.0 * direction, 1.0, 1.0);
-    }
-    
-    mascotSprite.material.needsUpdate = true;
-  }
-}
-
-// --- Mascot Movement & Scrolling Control ---
 
 // --- Camera & Scrolling Control ---
 let scrollPercent = 0;
@@ -586,15 +511,7 @@ window.addEventListener('click', (event) => {
     } else if (clickedId.startsWith('doodle-skill-')) {
       const skillName = clickedId.replace('doodle-skill-', '');
       highlightSkillByName(skillName);
-    } else if (clickedId === 'doodle-bio') {
-      // Wiggle mascot speech bubble
-      triggerMascotSpeak("Yep, that's Jaggu's brain! Keep scrolling to check out his skills!");
-    } else if (clickedId === 'doodle-intern') {
-      triggerMascotSpeak("Mindmatrix Intern area! He wrote Java backends and GenAI workflows here!");
-    } else if (clickedId === 'doodle-certs') {
-      triggerMascotSpeak("Jaggu is Anthropic AI Fluency, OCI, and GitHub certified!");
-    } else if (clickedId === 'doodle-connect') {
-      triggerMascotSpeak("Shoot him an email at jaggureddy2004@gmail.com! Say hello!");
+
     }
   }
 });
@@ -621,10 +538,7 @@ function highlightNextSkill() {
   // Show active one
   const targetId = skillsIds[currentSkillIndex];
   document.getElementById(`skill-desc-${targetId}`).classList.add('active');
-  
-  // Update mascot pointing direction
-  updateMascotPose('point', 1); // point right (skills are on right side)
-  triggerMascotSpeak(`Here are his skills on ${targetId.toUpperCase()}!`);
+
   
   currentSkillIndex = (currentSkillIndex + 1) % skillsIds.length;
 }
@@ -641,10 +555,7 @@ function highlightSkillByName(targetId) {
   if (targetEl) {
     targetEl.classList.add('active');
   }
-  
-  // Update mascot pointing direction
-  updateMascotPose('point', 1); // point right (skills are on right side)
-  triggerMascotSpeak(`Here are my skills on ${targetId.toUpperCase()}!`);
+
 }
 
 // Modal handling
@@ -673,24 +584,6 @@ document.querySelectorAll('.close-modal-btn, .modal-overlay').forEach(element =>
   });
 });
 
-// Mascot Dialog Speech bubble helper
-let speechBubbleTimer;
-function triggerMascotSpeak(text) {
-  let bubble = document.querySelector('.mascot-speech-bubble');
-  if (!bubble) return;
-  bubble.textContent = text;
-  
-  // Pop animation
-  bubble.parentElement.classList.remove('drawIn');
-  void bubble.offsetWidth; // trigger reflow
-  bubble.parentElement.classList.add('drawIn');
-  
-  // Revert back to idle guide dialog after 4 seconds
-  clearTimeout(speechBubbleTimer);
-  speechBubbleTimer = setTimeout(() => {
-    bubble.textContent = "I'm Doodle-Bot, your guide! Keep scrolling to explore!";
-  }, 4000);
-}
 
 // --- Theme Toggle Control ---
 const themeToggle = document.getElementById('theme-toggle');
@@ -724,8 +617,6 @@ themeToggle.addEventListener('click', () => {
   // Re-draw WebGL lines and textures
   drawWobblyCorridor();
   redrawAllDoodles();
-  // Redraw mascot (no-op since it's a static image now)
-  // mascotTexture.needsUpdate = true;
 });
 
 // --- Sound Toggle Control ---
@@ -777,33 +668,7 @@ function animate(time) {
     camera.position.x += (0 - camera.position.x) * 0.1;
   }
   
-  // 3. Update Mascot floating and animation poses
-  if (mascotSprite) {
-    // Keep mascot completely locked to the camera viewport (HUD-style) to prevent shaking or bobbing
-    mascotSprite.position.x = camera.position.x - 1.2;
-    mascotSprite.position.y = camera.position.y - 0.55;
-    mascotSprite.position.z = camera.position.z - 4.5;
-    
-    // Choose mascot pose based on movement
-    if (scrollSpeed > 0.08) {
-      updateMascotPose('walk', deltaZ < 0 ? 1 : -1);
-      
-      // Update spritesheet offset based on absolute camera Z coordinate.
-      // Every 0.3 units of movement progresses to the next walk frame.
-      const walkFrame = Math.floor(Math.abs(currentCameraZ) * 3.3) % 8;
-      mascotWalkTexture.offset.x = walkFrame * 0.125;
-    } else {
-      // Return scale.y to 1.0 (default standing height)
-      mascotSprite.scale.y = 1.0;
-      
-      // Pointing based on Z location (all UI panels are on the right)
-      if (activeSectionIndex >= 1 && activeSectionIndex <= 6) {
-        updateMascotPose('point', 1); // point right
-      } else {
-        updateMascotPose('idle', 1); // face forward for cover
-      }
-    }
-  }
+
   
   // 4. Update active UI sections based on camera Z depth
   updateUIOverlays(currentCameraZ);
@@ -827,7 +692,6 @@ function animate(time) {
 
 // --- Initialization ---
 drawWobblyCorridor();
-initMascot();
 initDoodles();
 
 // Start loop

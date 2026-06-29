@@ -417,30 +417,26 @@ body, html {
 /* Project List in Overlay */
 /* Project List in Overlay */
 .projects-card {
-  width: 620px;
+  width: 820px;
+  max-width: 95vw;
+  padding: 25px 30px;
 }
 
-.projects-scroll-container {
-  max-height: 52vh;
-  overflow-y: auto;
-  margin-top: 15px;
-  padding-right: 8px;
-  padding-bottom: 5px;
+.projects-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 5px;
 }
 
-.projects-scroll-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.projects-scroll-container::-webkit-scrollbar-thumb {
-  background-color: var(--ink-color);
-  border-radius: 3px;
+.projects-card .instruction-text {
+  font-size: 1.05rem;
+  margin-bottom: 10px;
 }
 
 .projects-list {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
+  margin-top: 15px;
 }
 
 #sec-projects {
